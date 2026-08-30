@@ -1,10 +1,10 @@
 "use client";
 
-import { fetchHandlerCustody } from "@/apis/materials.api";
+import { fetchHandlerCustody, updateUsedQuantity } from "@/apis/materials.api";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
 import { useState } from "react";
-import { api } from "@/lib/api";
+
 
 interface HandlerMaterialsItem {
   id: number;
@@ -21,12 +21,6 @@ interface HandlerMaterialsResponse {
   data: HandlerMaterialsItem[];
 }
 
-async function updateUsedQuantity({ id, used_quantity }: { id: number; used_quantity: number }) {
-  const response = await api.post(`/inventory/handler/update-used/${id}`, {
-    used_quantity,
-  });
-  return response.data;
-}
 
 export default function HandlersCustodyPage() {
   const queryClient = useQueryClient();

@@ -1,3 +1,5 @@
+
+
 "use client";
 
 import { useState } from "react";
@@ -12,6 +14,9 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { useRawMaterialsByCategory, useDispenseMaterial } from "@/hooks/use-raw-materials";
+
+// import { useWithdrawMaterial } from "@/hooks/use-raw-materials";
+
 
 // تعريف واجهة الخامة بدقة لتجنب استخدام أي نوع مبهم
 interface RawMaterial {
@@ -39,6 +44,7 @@ export function DispenseMaterialModal({
 }: DispenseMaterialModalProps) {
   const [selectedMaterialId, setSelectedMaterialId] = useState<string>("");
   const [quantity, setQuantity] = useState<string>("");
+//   const { withdrawMaterial, isSubmitting, errorMessage } = useWithdrawMaterial();
 
   const { data: categoryData, isLoading: isLoadingMaterials } = useRawMaterialsByCategory(categoryId);
   const dispenseMutation = useDispenseMaterial(orderId, itemId);
@@ -66,6 +72,9 @@ export function DispenseMaterialModal({
       }
     );
   };
+
+
+  
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>

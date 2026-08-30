@@ -2,113 +2,60 @@
 
 import { use, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import { ArrowRight, AlertCircle, Loader2, Pencil, Plus, X } from "lucide-react";
+
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+
 import { DispenseMaterialModal } from "@/components/orders/DispenseMaterialModal";
 import PaymentsModal from "@/components/orders/PaymentsModal";
 import { EditStageModal } from "@/components/EditStageModal";
-
-import {
-  ArrowRight,
-  Briefcase,
-  CreditCard,
-  Loader2,
-  Package,
-  Plus,
-  Receipt,
-  AlertCircle,
-  X,
-  Trash2,
-  Pencil,
-} from "lucide-react";
-import { Button } from "@/components/ui/button";
-// import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import { useItemStages } from "@/hooks/use-orders";
-import { useStageActions } from "@/hooks/use-stage-actions";
 import { StartStageForm } from "@/components/orders/StartStageModal";
-import type {
-  ItemStagesResponse,
-  OrderItemStage,
-  RawMaterialItem,
-  StageDetailItem,
-} from "@/types/order";
-import { api } from "@/lib/api";
+import { StageTabs } from "@/components/orders/StageTabs";
+import { StageSummaryBanner } from "@/components/orders/StageSummaryBanner";
+import { WorkshopInfoCard } from "@/components/orders/WorkshopInfoCard";
+import { RawMaterialsTable } from "@/components/orders/RawMaterialsTable";
+import { StageDetailsList } from "@/components/orders/StageDetailsList";
+import { AddPaymentDialog } from "@/components/orders/AddPaymentDialog";
+import { AddDetailDialog } from "@/components/orders/AddDetailDialog";
 
-const DEFAULT_STAGES = [
-  { id: 1, name: "النجارة", order: 1 },
-  { id: 2, name: "الدهان", order: 2 },
-  { id: 3, name: "التنجيد", order: 3 },
-  { id: 4, name: "إضافات", order: 4 },
-  { id: 5, name: "التسليم", order: 5 },
-];
+import { useItemStages } from "@/hooks/use-orders";
+import { useAddDetailForm } from "@/hooks/use-add-detail-form";
+import { usePaymentForm } from "@/hooks/use-payment-form";
 
-const statusDotMap: Record<string, { color: string; label: string }> = {
-  completed: { color: "bg-emerald-500", label: "مكتملة" },
-  in_progress: { color: "bg-amber-500", label: "قيد التنفيذ" },
-  not_started: { color: "bg-gray-300", label: "لم تبدأ" },
-  pending: { color: "bg-gray-300", label: "لم تبدأ" },
-};
+import {
+  buildAllStages,
+  getActiveStageIndex,
+  getCurrentCategoryId,
+} from "@/lib/stage-helpers";
+import type { ItemStagesResponse, OrderItemStage } from "@/types/order";
 
 export default function ItemDetailsPage({
   params,
 }: {
-  params: Promise<{
-    id: string;
-    itemId: string;
-  }>;
+  params: Promise<{ id: string; itemId: string }>;
 }) {
   const resolvedParams = use(params);
   const orderId = Number(resolvedParams.id);
   const itemId = Number(resolvedParams.itemId);
+
   const router = useRouter();
   const searchParams = useSearchParams();
 
-  const {
-    addDetailItem,
-    isAddingDetail,
-    addDetailError,
-    deleteDetailItem,
-    isDeletingDetail,
-  } = useStageActions(orderId, itemId);
-
-  // States المودال والنماذج
+  // حالات محلية بسيطة خاصة بالصفحة نفسها فقط
   const [showStartForm, setShowStartForm] = useState(false);
-  const [isAddDetailOpen, setIsAddDetailOpen] = useState(false);
-  const [newDetailItemName, setNewDetailItemName] = useState("");
-  const [newDetailItemCost, setNewDetailItemCost] = useState("");
   const [isDispenseModalOpen, setIsDispenseModalOpen] = useState(false);
-
-  // حالة فتح وإغلاق مودال تعديل البيانات
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
 
-  // حالات مستقلة لكل زر من زري الدفعات
-  const [isAddPaymentModalOpen, setIsAddPaymentModalOpen] = useState(false);
-  const [isViewPaymentsModalOpen, setIsViewPaymentsModalOpen] = useState(false);
-
-  // حالات نموذج إضافة دفعة جديدة
-  const [paymentAmount, setPaymentAmount] = useState("");
-  const [paymentNote, setPaymentNote] = useState("");
-  const [isSubmittingPayment, setIsSubmittingPayment] = useState(false);
-
-  // 1️⃣ قراءة اسم المرحلة الحالية من الـ URL
   const currentStageFromUrl = searchParams.get("stage")
     ? decodeURIComponent(searchParams.get("stage")!)
     : undefined;
 
-  // 2️⃣ إرسال اسم المرحلة للـ Hook لطلب البيانات من الـ Backend
   const { data, isLoading, isError, error } = useItemStages(
     orderId,
     itemId,
     currentStageFromUrl,
   );
-
   const apiData = data as ItemStagesResponse | undefined;
 
   const fetchedStages: OrderItemStage[] = apiData
@@ -119,24 +66,17 @@ export default function ItemDetailsPage({
         : []
     : [];
 
-  const firstReturnedStageName = fetchedStages[0]?.stage_name;
+  const activeStageIndex = getActiveStageIndex(
+    currentStageFromUrl,
+    fetchedStages[0]?.stage_name,
+  );
+  const allStages = buildAllStages(fetchedStages);
+  const currentStage = allStages[activeStageIndex] || allStages[0];
+  const currentCategoryId = getCurrentCategoryId(currentStage);
 
-  // 3️⃣ حساب التبويب النشط
-  const activeStageIndex = (() => {
-    if (currentStageFromUrl) {
-      const foundIdx = DEFAULT_STAGES.findIndex(
-        (s) => s.name === currentStageFromUrl,
-      );
-      if (foundIdx !== -1) return foundIdx;
-    }
-    if (firstReturnedStageName) {
-      const foundIdx = DEFAULT_STAGES.findIndex(
-        (s) => s.name === firstReturnedStageName,
-      );
-      if (foundIdx !== -1) return foundIdx;
-    }
-    return 0;
-  })();
+  // فورمات البنود والدفعات بقت جوّه هوكس منفصلة
+  const detailForm = useAddDetailForm(orderId, itemId, currentStage.name);
+  const paymentForm = usePaymentForm(orderId, itemId, currentStage.name);
 
   const handleStageChange = (stageName: string) => {
     setShowStartForm(false);
@@ -144,103 +84,6 @@ export default function ItemDetailsPage({
       `/orders/${orderId}/items/${itemId}?stage=${encodeURIComponent(stageName)}`,
       { scroll: false },
     );
-  };
-
-  const allStages = DEFAULT_STAGES.map((defStage) => {
-    const found = fetchedStages.find(
-      (s) =>
-        s.stage_name === defStage.name ||
-        Number(s.stage_order) === defStage.order,
-    );
-
-    const sData = found || ({} as Partial<OrderItemStage>);
-    const rawExecutionType = sData.execution_type
-      ? String(sData.execution_type)
-      : null;
-
-    let executionTypeLabel = "غير محدد";
-    if (rawExecutionType === "external") executionTypeLabel = "خارجي";
-    if (rawExecutionType === "internal") executionTypeLabel = "داخلي";
-
-    const detailsItems: StageDetailItem[] = sData.details?.details?.items || [];
-
-    return {
-      id: Number(sData.id) || defStage.id,
-      name: defStage.name,
-      order: defStage.order,
-      status: String(sData.status || (found ? "not_started" : "not_started")),
-      workshopName:
-        sData.handler_name ||
-        sData.workshop_name ||
-        sData.workshop ||
-        "غير محدد",
-      agreedCost: Number(sData.agreed_cost || 0),
-      totalPaid: Number(sData.total_paid || 0),
-      remainingAmount: Number(sData.remaining_amount || 0),
-      stageCost: Number(sData.stage_cost || 0),
-      rawMaterialsCost: Number(sData.raw_materials_cost || 0),
-      detailsCost: Number(sData.details_cost || 0),
-      rawExecutionType,
-      executionTypeLabel,
-      rawMaterials: sData.raw_materials || [],
-      detailsItems,
-      hasStarted: Boolean(found && rawExecutionType),
-    };
-  });
-
-  const currentStage = allStages[activeStageIndex] || allStages[0];
-  const currentCategoryId = currentStage?.id || 1;
-
-  // 🔹 دالة معالجة إضافة البند
-  const handleAddDetailSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    addDetailItem(
-      {
-        stageName: currentStage.name,
-        item: newDetailItemName,
-        cost: Number(newDetailItemCost),
-      },
-      {
-        onSuccess: () => {
-          setIsAddDetailOpen(false);
-          setNewDetailItemName("");
-          setNewDetailItemCost("");
-        },
-      },
-    );
-  };
-
-  // 🔹 دالة معالجة حفظ الدفعة الجديدة وإرسالها للباك إند
-  const handleSavePaymentSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsSubmittingPayment(true);
-
-    try {
-      await api.post(`/api/orders/${orderId}/items/${itemId}/payments`, {
-        stage_name: currentStage.name,
-        amount: Number(paymentAmount),
-        notes: paymentNote,
-      });
-
-      setIsAddPaymentModalOpen(false);
-      setPaymentAmount("");
-      setPaymentNote("");
-      router.refresh();
-    } catch (error) {
-      console.error("حدث خطأ:", error);
-      alert("حدث خطأ أثناء حفظ الدفعة.");
-    } finally {
-      setIsSubmittingPayment(false);
-    }
-  };
-
-  // 🔹 دالة معالجة حذف البند
-  const handleDeleteDetail = (itemName: string, itemCost: number) => {
-    deleteDetailItem({
-      stageName: currentStage.name,
-      itemName,
-      itemCost,
-    });
   };
 
   if (isLoading) {
@@ -318,58 +161,14 @@ export default function ItemDetailsPage({
         </div>
       </div>
 
-      {/* Tabs */}
-      <div className="border-b border-gray-200 bg-white px-6 rounded-2xl shadow-sm">
-        <div className="flex items-center justify-start gap-10 overflow-x-auto no-scrollbar">
-          {allStages.map((stg, index) => {
-            const isActive = activeStageIndex === index;
-            const dot = statusDotMap[stg.status] || statusDotMap["not_started"];
+      <StageTabs
+        stages={allStages}
+        activeIndex={activeStageIndex}
+        onChange={handleStageChange}
+      />
 
-            return (
-              <button
-                key={stg.id}
-                onClick={() => handleStageChange(stg.name)}
-                className={`relative flex items-center gap-2.5 py-5 text-base font-extrabold transition-colors whitespace-nowrap ${
-                  isActive
-                    ? "text-[#2C2420]"
-                    : "text-gray-400 hover:text-gray-600"
-                }`}
-              >
-                <span className={`size-3 rounded-full ${dot.color}`} />
-                <span>
-                  .{stg.order} {stg.name}
-                </span>
+      <StageSummaryBanner stage={currentStage} />
 
-                {isActive && (
-                  <span className="absolute bottom-0 right-0 left-0 h-1.5 bg-amber-500 rounded-t-md" />
-                )}
-              </button>
-            );
-          })}
-        </div>
-      </div>
-
-      {/* إجمالي التكلفة للمراحل */}
-      {currentStage.hasStarted && (
-        <div className="bg-[#E6F8F0] border border-[#BCECD7] rounded-2xl p-6 flex items-center justify-between shadow-sm">
-          <div className="text-left space-y-1">
-            <div className="flex items-center justify-end gap-2 text-[#0D5C3A] font-black text-xl md:text-2xl">
-              <span>إجمالي تكلفة مرحلة {currentStage.name}</span>
-              <Briefcase className="size-6 text-[#0D5C3A]" />
-            </div>
-            <p className="text-sm md:text-base font-bold text-[#1E7E53]">
-              {currentStage.rawExecutionType === "internal"
-                ? "تشمل الصنيعي + الخامات + البنود الأخرى"
-                : "تكلفة المصنعية / الشغل الخارجي"}
-            </p>
-          </div>
-          <span className="text-3xl font-black text-[#0D5C3A]">
-            {currentStage.stageCost.toLocaleString()} ج.م
-          </span>
-        </div>
-      )}
-
-      {/* المحتوى الرئيسي */}
       {!currentStage.hasStarted ? (
         showStartForm ? (
           <div className="space-y-4">
@@ -431,274 +230,43 @@ export default function ItemDetailsPage({
               </div>
             </div>
 
-            <div className="flex items-center gap-3">
-              {/* الزر المعدل ليفتح الـ Modal بدلاً من تغيير الفورم بالكامل */}
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setIsEditModalOpen(true)}
-                className="bg-white hover:bg-gray-50 text-[#7C4A26] border-gray-300 font-bold rounded-xl gap-1.5 text-sm shadow-none h-9 px-3.5"
-              >
-                <Pencil className="size-4" />
-                <span>تعديل البيانات</span>
-              </Button>
-            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setIsEditModalOpen(true)}
+              className="bg-white hover:bg-gray-50 text-[#7C4A26] border-gray-300 font-bold rounded-xl gap-1.5 text-sm shadow-none h-9 px-3.5"
+            >
+              <Pencil className="size-4" />
+              <span>تعديل البيانات</span>
+            </Button>
           </CardHeader>
 
           <CardContent className="p-6 space-y-6">
-            {/* بيانات الصنيعي */}
-            <div className="bg-[#FAF8F5] p-6 rounded-2xl border border-amber-100/60 space-y-5">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <span className="text-2xl">👷</span>
-                  <h3 className="text-xl font-black text-[#2C2420]">
-                    بيانات الصنيعي
-                  </h3>
-                </div>
-                <div className="flex items-center gap-2">
-                  {/* زر مستقل يفتح مودال إضافة دفعة بالخانات */}
-                  <button
-                    type="button"
-                    onClick={() => setIsAddPaymentModalOpen(true)}
-                    className="flex items-center gap-1.5 text-sm font-bold text-white bg-[#7C4A26] hover:bg-[#633a1e] px-4 py-2 rounded-xl shadow-sm transition-all"
-                  >
-                    <Plus className="size-4" />
-                    <span>إضافة دفعة</span>
-                  </button>
-
-                  {/* زر مستقل يفتح مودال عرض الدفعات السابقة */}
-                  <button
-                    type="button"
-                    onClick={() => setIsViewPaymentsModalOpen(true)}
-                    className="flex items-center gap-2 text-sm font-bold text-emerald-800 hover:text-emerald-900 bg-emerald-100/80 hover:bg-emerald-200/80 px-4 py-2 rounded-xl border border-emerald-300 shadow-sm transition-all"
-                  >
-                    <CreditCard className="size-4 text-emerald-800" />
-                    <span>الدفعات</span>
-                  </button>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-5 pt-1">
-                <div className="space-y-2 md:col-span-1">
-                  <label className="text-sm font-bold text-gray-600 block">
-                    اسم المصنعية / الصنيعي
-                  </label>
-                  <div className="w-full bg-white border border-gray-200 rounded-2xl px-5 py-3.5 text-base font-black text-[#2C2420] shadow-sm">
-                    {currentStage.workshopName}
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  <label className="text-sm font-bold text-gray-600 block">
-                    الأجرة المتفق عليها
-                  </label>
-                  <div className="w-full bg-white border border-gray-200 rounded-2xl px-5 py-3.5 text-base font-black text-[#2C2420] shadow-sm">
-                    {currentStage.agreedCost.toLocaleString()} ج.م
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  <label className="text-sm font-bold text-gray-600 block">
-                    المدفوع
-                  </label>
-                  <div className="w-full bg-white border border-gray-200 rounded-2xl px-5 py-3.5 text-base font-black text-emerald-700 shadow-sm">
-                    {currentStage.totalPaid.toLocaleString()} ج.م
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  <label className="text-sm font-bold text-gray-600 block">
-                    المتبقي
-                  </label>
-                  <div className="w-full bg-white border border-gray-200 rounded-2xl px-5 py-3.5 text-base font-black text-red-600 shadow-sm">
-                    {currentStage.remainingAmount.toLocaleString()} ج.م
-                  </div>
-                </div>
-              </div>
-            </div>
+            <WorkshopInfoCard
+              stage={currentStage}
+              onAddPayment={() => paymentForm.setIsAddOpen(true)}
+              onViewPayments={() => paymentForm.setIsViewOpen(true)}
+            />
 
             {currentStage.rawExecutionType === "internal" && (
               <>
-                {/* المواد المسحوبة */}
-                <div className="border border-gray-200 rounded-2xl overflow-hidden bg-white shadow-sm">
-                  <div className="bg-[#FAF8F5] p-4 flex items-center justify-between border-b border-gray-200">
-                    <div className="flex items-center gap-2">
-                      <h3 className="text-base font-extrabold text-[#2C2420]">
-                        المواد المسحوبه من المخزن
-                      </h3>
-                      <Package className="size-5 text-amber-700" />
-                    </div>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setIsDispenseModalOpen(true)}
-                      className="bg-white hover:bg-gray-50 text-[#7C4A26] border-gray-300 font-bold rounded-xl gap-1 text-sm shadow-none"
-                    >
-                      <Plus className="size-4" /> صرف خامة
-                    </Button>
-                  </div>
-
-                  <div className="overflow-x-auto">
-                    <table className="w-full text-right border-collapse">
-                      <thead>
-                        <tr className="bg-[#FEF9E7] text-gray-700 text-sm font-black border-b border-amber-100">
-                          <th className="p-3.5">الخامة</th>
-                          <th className="p-3.5 text-center">الكمية</th>
-                          <th className="p-3.5 text-center">سعر الوحدة</th>
-                          <th className="p-3.5 text-left pl-6">الإجمالي</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-gray-100 text-sm font-bold text-[#2C2420]">
-                        {currentStage.rawMaterials.length > 0 ? (
-                          currentStage.rawMaterials.map(
-                            (mat: RawMaterialItem, idx: number) => {
-                              const materialName =
-                                mat.raw_material?.name || "خامة بدون اسم";
-                              const unit = mat.raw_material?.unit || "";
-                              const quantity = parseFloat(
-                                String(mat.quantity || 0),
-                              );
-                              const rawUnitPrice =
-                                mat.raw_material?.unit_price ??
-                                mat.unit_price ??
-                                0;
-                              const unitPrice = parseFloat(
-                                String(rawUnitPrice),
-                              );
-                              const totalCost = parseFloat(
-                                String(mat.total_cost || 0),
-                              );
-
-                              return (
-                                <tr
-                                  key={mat.id || idx}
-                                  className="hover:bg-gray-50/50 transition-colors"
-                                >
-                                  <td className="p-3.5 font-extrabold">
-                                    {materialName}
-                                  </td>
-                                  <td className="p-3.5 text-center font-semibold text-gray-600">
-                                    {quantity} {unit}
-                                  </td>
-                                  <td className="p-3.5 text-center font-semibold text-gray-600">
-                                    {unitPrice.toLocaleString()} ج.م
-                                  </td>
-                                  <td className="p-3.5 text-left pl-6 font-black">
-                                    {totalCost.toLocaleString()} ج.م
-                                  </td>
-                                </tr>
-                              );
-                            },
-                          )
-                        ) : (
-                          <tr>
-                            <td
-                              colSpan={4}
-                              className="text-center py-6 text-gray-400 font-semibold"
-                            >
-                              لا توجد مواد مسحوبة مسجلة لهذه المرحلة
-                            </td>
-                          </tr>
-                        )}
-                      </tbody>
-                    </table>
-                  </div>
-
-                  <div className="bg-[#FEF9E7] p-4 flex items-center justify-between border-t border-amber-100">
-                    <span className="text-sm font-black text-[#2C2420]">
-                      إجمالي المسحوب من المخزن
-                    </span>
-                    <span className="text-base font-black text-amber-900">
-                      {currentStage.rawMaterialsCost.toLocaleString()} ج.م
-                    </span>
-                  </div>
-                </div>
-
-                {/* التفاصيل والبنود الفرعية */}
-                <div className="border border-gray-200 rounded-2xl overflow-hidden bg-white shadow-sm space-y-0">
-                  <div className="bg-[#FAF8F5] p-4 flex items-center justify-between border-b border-gray-200">
-                    <div className="flex items-center gap-2">
-                      <h3 className="text-base font-extrabold text-[#2C2420]">
-                        التفاصيل والبنود الفرعية
-                      </h3>
-                      <Receipt className="size-5 text-amber-700" />
-                    </div>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setIsAddDetailOpen(true)}
-                      className="bg-white hover:bg-gray-50 text-[#7C4A26] border-gray-300 font-bold rounded-xl gap-1 text-sm shadow-none"
-                    >
-                      <Plus className="size-4" /> إضافة بند تكلفة
-                    </Button>
-                  </div>
-
-                  <div className="p-4 space-y-3 bg-[#FAF8F5]/40">
-                    {currentStage.detailsItems.length > 0 ? (
-                      currentStage.detailsItems.map(
-                        (detail: StageDetailItem, dIdx: number) => {
-                          const itemName =
-                            detail.item || detail.name || "بند بدون اسم";
-                          const itemCost = Number(detail.cost || 0);
-
-                          return (
-                            <div
-                              key={dIdx}
-                              className="flex justify-between items-center text-base py-3 px-4 bg-white rounded-xl border border-gray-100 shadow-xs"
-                            >
-                              <div className="flex items-center gap-3">
-                                <span className="text-[#2C2420] font-bold">
-                                  {itemName}
-                                </span>
-                              </div>
-
-                              <div className="flex justify-between gap-2">
-                                <span className="font-black text-[#2C2420]">
-                                  {itemCost.toLocaleString()} ج.م
-                                </span>
-                                <button
-                                  type="button"
-                                  title="حذف البند"
-                                  disabled={isDeletingDetail}
-                                  onClick={() =>
-                                    handleDeleteDetail(itemName, itemCost)
-                                  }
-                                  className="text-red-500 hover:text-red-700 hover:bg-red-50 p-1.5 rounded-lg transition-colors disabled:opacity-50"
-                                >
-                                  <Trash2 className="size-4" />
-                                </button>
-                              </div>
-                            </div>
-                          );
-                        },
-                      )
-                    ) : (
-                      <div className="py-6 text-center text-sm font-semibold text-muted-foreground">
-                        لا توجد بنود فرعية مسجلة لهذه المرحلة
-                      </div>
-                    )}
-                  </div>
-
-                  {currentStage.detailsItems.length > 0 && (
-                    <div className="bg-[#FAF8F5] p-4 flex items-center justify-between border-t border-gray-200">
-                      <span className="text-sm font-black text-[#2C2420]">
-                        إجمالي البنود الفرعية
-                      </span>
-                      <span className="text-base font-black text-[#2C2420]">
-                        {currentStage.detailsCost.toLocaleString()} ج.م
-                      </span>
-                    </div>
-                  )}
-                </div>
+                <RawMaterialsTable
+                  stage={currentStage}
+                  onDispense={() => setIsDispenseModalOpen(true)}
+                />
+                <StageDetailsList
+                  stage={currentStage}
+                  isDeleting={detailForm.isDeletingDetail}
+                  onAdd={() => detailForm.setIsOpen(true)}
+                  onDelete={detailForm.remove}
+                />
               </>
             )}
           </CardContent>
         </Card>
       )}
 
-      {/* المودالات والـ Popups */}
-
-      {/* 1️⃣ مودال صرف المواد */}
+      {/* المودالات */}
       <DispenseMaterialModal
         isOpen={isDispenseModalOpen}
         onClose={() => setIsDispenseModalOpen(false)}
@@ -708,16 +276,14 @@ export default function ItemDetailsPage({
         categoryId={currentCategoryId}
       />
 
-      {/* 2️⃣ مودال عرض سجل الدفعات السابقة */}
       <PaymentsModal
-        isOpen={isViewPaymentsModalOpen}
-        onClose={() => setIsViewPaymentsModalOpen(false)}
+        isOpen={paymentForm.isViewOpen}
+        onClose={() => paymentForm.setIsViewOpen(false)}
         orderId={Number(orderId)}
         itemId={Number(itemId)}
         stageName={currentStage.name}
       />
 
-      {/* مكون الـ Modal الخاص بالتعديل يتم وضعه هنا */}
       <EditStageModal
         isOpen={isEditModalOpen}
         onClose={() => setIsEditModalOpen(false)}
@@ -735,139 +301,32 @@ export default function ItemDetailsPage({
         }}
       />
 
-      {/* 3️⃣ مودال إضافة دفعة جديدة (مع الخانات وزر الحفظ للباك إند) */}
-      <Dialog
-        open={isAddPaymentModalOpen}
-        onOpenChange={setIsAddPaymentModalOpen}
-      >
-        <DialogContent className="sm:max-w-md dir-rtl rounded-2xl bg-white p-6">
-          <DialogHeader>
-            <DialogTitle className="text-xl font-black text-[#2C2420] text-right">
-              إضافة دفعة جديدة لصنيعي ({currentStage.name})
-            </DialogTitle>
-          </DialogHeader>
+      <AddPaymentDialog
+        isOpen={paymentForm.isAddOpen}
+        onOpenChange={paymentForm.setIsAddOpen}
+        stageName={currentStage.name}
+        amount={paymentForm.amount}
+        onAmountChange={paymentForm.setAmount}
+        note={paymentForm.note}
+        onNoteChange={paymentForm.setNote}
+        isSubmitting={paymentForm.isSubmitting}
+        onSubmit={paymentForm.submit}
+        onCancel={() => paymentForm.setIsAddOpen(false)}
+      />
 
-          <form onSubmit={handleSavePaymentSubmit} className="space-y-4 mt-2">
-            <div className="space-y-1.5 text-right">
-              <Label className="text-sm font-bold text-[#2C2420]">
-                المبلغ المراد دفعه (ج.م) *
-              </Label>
-              <Input
-                type="number"
-                step="any"
-                required
-                placeholder="0.00"
-                value={paymentAmount}
-                onChange={(e) => setPaymentAmount(e.target.value)}
-                className="rounded-xl border-gray-200 h-11 text-center text-sm font-bold"
-              />
-            </div>
-
-            <div className="space-y-1.5 text-right">
-              <Label className="text-sm font-bold text-[#2C2420]">
-                ملاحظات أو بيان الدفعة (اختياري)
-              </Label>
-              <Input
-                placeholder="مثال: دفعة مقدمة، تسليم جزء من الحساب..."
-                value={paymentNote}
-                onChange={(e) => setPaymentNote(e.target.value)}
-                className="rounded-xl border-gray-200 h-11 text-right text-sm font-bold"
-              />
-            </div>
-
-            <div className="flex items-center justify-end gap-3 pt-3">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => setIsAddPaymentModalOpen(false)}
-                className="rounded-xl font-bold border-gray-200"
-              >
-                إلغاء
-              </Button>
-              <Button
-                type="submit"
-                disabled={isSubmittingPayment}
-                className="rounded-xl font-black bg-[#7C4A26] hover:bg-[#633a1e] text-white px-6"
-              >
-                {isSubmittingPayment ? (
-                  <Loader2 className="size-4 animate-spin" />
-                ) : (
-                  "حفظ الدفعة"
-                )}
-              </Button>
-            </div>
-          </form>
-        </DialogContent>
-      </Dialog>
-
-      {/* 4️⃣ مودال إضافة بند تكلفة جديد */}
-      <Dialog open={isAddDetailOpen} onOpenChange={setIsAddDetailOpen}>
-        <DialogContent className="sm:max-w-md dir-rtl rounded-2xl bg-white p-6">
-          <DialogHeader>
-            <DialogTitle className="text-xl font-black text-[#2C2420] text-right">
-              إضافة بند تكلفة جديد ({currentStage.name})
-            </DialogTitle>
-          </DialogHeader>
-
-          <form onSubmit={handleAddDetailSubmit} className="space-y-4 mt-2">
-            <div className="space-y-1.5 text-right">
-              <Label className="text-sm font-bold text-[#2C2420]">
-                اسم البند *
-              </Label>
-              <Input
-                required
-                placeholder="مثال: CNC أو نقل أو لزق"
-                value={newDetailItemName}
-                onChange={(e) => setNewDetailItemName(e.target.value)}
-                className="rounded-xl border-gray-200 h-11 text-right text-sm font-bold"
-              />
-            </div>
-
-            <div className="space-y-1.5 text-right">
-              <Label className="text-sm font-bold text-[#2C2420]">
-                التكلفة (ج.م) *
-              </Label>
-              <Input
-                type="number"
-                step="any"
-                required
-                placeholder="0.00"
-                value={newDetailItemCost}
-                onChange={(e) => setNewDetailItemCost(e.target.value)}
-                className="rounded-xl border-gray-200 h-11 text-center text-sm font-bold"
-              />
-            </div>
-
-            {addDetailError && (
-              <p className="text-xs font-bold text-red-500">
-                {(addDetailError as Error)?.message}
-              </p>
-            )}
-
-            <div className="flex items-center justify-end gap-3 pt-3">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => setIsAddDetailOpen(false)}
-                className="rounded-xl font-bold border-gray-200"
-              >
-                إلغاء
-              </Button>
-              <Button
-                type="submit"
-                disabled={isAddingDetail}
-                className="rounded-xl font-black bg-[#7C4A26] hover:bg-[#633a1e] text-white px-6"
-              >
-                {isAddingDetail ? (
-                  <Loader2 className="size-4 animate-spin" />
-                ) : (
-                  "إضافة البند"
-                )}
-              </Button>
-            </div>
-          </form>
-        </DialogContent>
-      </Dialog>
+      <AddDetailDialog
+        isOpen={detailForm.isOpen}
+        onOpenChange={detailForm.setIsOpen}
+        stageName={currentStage.name}
+        name={detailForm.name}
+        onNameChange={detailForm.setName}
+        cost={detailForm.cost}
+        onCostChange={detailForm.setCost}
+        isSubmitting={detailForm.isAddingDetail}
+        error={detailForm.addDetailError as Error | null}
+        onSubmit={detailForm.submit}
+        onCancel={() => detailForm.setIsOpen(false)}
+      />
     </div>
   );
 }

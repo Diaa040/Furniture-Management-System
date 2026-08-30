@@ -166,12 +166,14 @@
 }
 /* ==========================================================================
    Item Details Page Styles (to be placed in global.css)
+   نسخة معدّلة: بتستخدم الـ design tokens (CSS variables) بدل الألوان الثابتة
+   عشان الدارك مود يشتغل تلقائي على أي حاجة بتستخدم الكلاسات دي
    ========================================================================== */
 
 /* Page Level Layout & Loaders */
 .item-details-container {
   min-height: 100vh;
-  background-color: #F1F5F9;
+  background-color: var(--background);
   padding: 1.5rem;
   display: flex;
   flex-direction: column;
@@ -181,7 +183,7 @@
 .page-loading-wrapper,
 .page-error-wrapper {
   min-height: 100vh;
-  background-color: #F1F5F9;
+  background-color: var(--background);
   padding: 1.5rem;
 }
 
@@ -195,14 +197,14 @@
   display: flex;
   align-items: center;
   gap: 0.75rem;
-  color: #0F172A;
+  color: var(--foreground);
 }
 
 .loading-spinner {
   width: 1.5rem;
   height: 1.5rem;
   animation: spin 1s linear infinite;
-  color: #F59E0B;
+  color: var(--primary);
 }
 
 .loading-text {
@@ -212,10 +214,10 @@
 
 .error-card {
   border-radius: 1rem;
-  border: 1px solid #FECACA;
-  background-color: #FEF2F2;
+  border: 1px solid var(--destructive);
+  background-color: color-mix(in srgb, var(--destructive) 12%, var(--card));
   padding: 1.25rem;
-  color: #DC2626;
+  color: var(--destructive);
   margin-top: 1rem;
 }
 
@@ -233,10 +235,10 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  background-color: #FFFFFF;
+  background-color: var(--card);
   padding: 1rem;
   border-radius: 0.75rem;
-  border: 1px solid #F1F5F9;
+  border: 1px solid var(--border);
   box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
 }
 
@@ -248,12 +250,12 @@
 
 .nav-back-icon {
   border-radius: 0.75rem;
-  border: 1px solid #E2E8F0;
+  border: 1px solid var(--border);
 }
 
 .breadcrumb {
   font-size: 0.75rem;
-  color: #64748B;
+  color: var(--muted-foreground);
   font-weight: 600;
 }
 
@@ -266,7 +268,7 @@
 }
 
 .breadcrumb strong {
-  color: #0F172A;
+  color: var(--foreground);
 }
 
 .user-profile-badge {
@@ -282,11 +284,11 @@
 }
 
 .user-name {
-  color: #0F172A;
+  color: var(--foreground);
 }
 
 .user-role {
-  color: #94A3B8;
+  color: var(--muted-foreground);
   font-weight: 400;
 }
 
@@ -294,11 +296,11 @@
   width: 2.25rem;
   height: 2.25rem;
   border-radius: 9999px;
-  background: linear-gradient(to top right, #FBBF24, #F59E0B);
+  background: linear-gradient(to top right, var(--chart-3), var(--primary));
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #0F172A;
+  color: var(--primary-foreground);
   font-weight: 800;
   font-size: 0.875rem;
 }
@@ -308,7 +310,7 @@
   border: none;
   box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
   border-radius: 0.75rem;
-  background-color: #FFFFFF;
+  background-color: var(--card);
   padding: 1.25rem;
   display: flex;
   flex-direction: column;
@@ -319,7 +321,7 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  border-bottom: 1px solid #F1F5F9;
+  border-bottom: 1px solid var(--border);
   padding-bottom: 1rem;
 }
 
@@ -333,8 +335,8 @@
   width: 2.25rem;
   height: 2.25rem;
   border-radius: 0.5rem;
-  background-color: #FEF3C7;
-  color: #B45309;
+  background-color: var(--accent);
+  color: var(--primary);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -344,24 +346,24 @@
 .item-title {
   font-size: 1rem;
   font-weight: 800;
-  color: #0F172A;
+  color: var(--foreground);
 }
 
 .item-price-info {
   font-size: 0.75rem;
-  color: #64748B;
+  color: var(--muted-foreground);
 }
 
 .item-price {
-  color: #0F766E;
+  color: var(--chart-2);
   font-weight: 700;
 }
 
 .edit-item-btn {
   font-size: 0.75rem;
   font-weight: 700;
-  color: #334155;
-  background-color: #F1F5F9;
+  color: var(--secondary-foreground);
+  background-color: var(--secondary);
   border: none;
   border-radius: 0.5rem;
   height: 2rem;
@@ -372,7 +374,7 @@
 .stages-tabs-header {
   display: flex;
   gap: 0.5rem;
-  border-bottom: 2px solid #E2E8F0;
+  border-bottom: 2px solid var(--border);
   overflow-x: auto;
   padding-bottom: 0.125rem;
 }
@@ -392,29 +394,29 @@
   border-top: none;
   border-left: none;
   border-right: none;
-  color: #64748B;
+  color: var(--muted-foreground);
   cursor: pointer;
 }
 
 .stage-tab-btn.active {
-  border-bottom-color: #FBBF24;
-  color: #0F172A;
+  border-bottom-color: var(--chart-3);
+  color: var(--foreground);
 }
 
 .status-dot {
   width: 0.5rem;
   height: 0.5rem;
   border-radius: 9999px;
-  background-color: #CBD5E1;
+  background-color: var(--border);
 }
 
-.status-dot.completed, .status-dot.done { background-color: #10B981; }
-.status-dot.in_progress, .status-dot.progress { background-color: #F59E0B; }
+.status-dot.completed, .status-dot.done { background-color: var(--chart-2); }
+.status-dot.in_progress, .status-dot.progress { background-color: var(--chart-3); }
 
 /* Stage Cost Banner */
 .stage-cost-banner {
-  background: linear-gradient(to right, #ECFDF5, #D1FAE5);
-  border: 1px solid #A7F3D0;
+  background: color-mix(in srgb, var(--chart-2) 14%, var(--card));
+  border: 1px solid color-mix(in srgb, var(--chart-2) 35%, var(--card));
   border-radius: 0.75rem;
   padding: 1rem;
   display: flex;
@@ -425,19 +427,20 @@
 .cost-banner-title {
   font-size: 0.75rem;
   font-weight: 700;
-  color: #065F46;
+  color: var(--chart-2);
 }
 
 .cost-banner-subtitle {
   font-size: 0.6875rem;
-  color: rgba(6, 95, 70, 0.8);
+  color: var(--chart-2);
+  opacity: 0.8;
   margin-top: 0.125rem;
 }
 
 .cost-banner-amount {
   font-size: 1.25rem;
   font-weight: 800;
-  color: #065F46;
+  color: var(--chart-2);
 }
 
 /* Controls Bar */
@@ -450,7 +453,7 @@
 .toggle-mode-wrapper {
   display: flex;
   gap: 0.25rem;
-  background-color: #F1F5F9;
+  background-color: var(--secondary);
   padding: 0.25rem;
   border-radius: 0.75rem;
 }
@@ -462,14 +465,14 @@
   font-weight: 700;
   border: none;
   background: transparent;
-  color: #64748B;
+  color: var(--muted-foreground);
   cursor: pointer;
   transition: all 0.2s;
 }
 
 .toggle-mode-btn.active {
-  background-color: #FFFFFF;
-  color: #0F172A;
+  background-color: var(--card);
+  color: var(--foreground);
   box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
 }
 
@@ -479,18 +482,18 @@
   border-radius: 9999px;
   font-weight: 700;
   font-size: 0.75rem;
-  background-color: #F1F5F9;
-  color: #475569;
+  background-color: var(--secondary);
+  color: var(--secondary-foreground);
 }
 
 .stage-status-badge.completed, .stage-status-badge.done {
-  background-color: #D1FAE5;
-  color: #065F46;
+  background-color: color-mix(in srgb, var(--chart-2) 20%, var(--card));
+  color: var(--chart-2);
 }
 
 .stage-status-badge.in_progress, .stage-status-badge.progress {
-  background-color: #FEF3C7;
-  color: #B45309;
+  background-color: color-mix(in srgb, var(--chart-3) 20%, var(--card));
+  color: var(--chart-3);
 }
 
 /* Form & Detail Sections */
@@ -501,8 +504,8 @@
 }
 
 .detail-section {
-  background-color: #F8FAFC;
-  border: 1px solid #E2E8F0;
+  background-color: var(--muted);
+  border: 1px solid var(--border);
   border-radius: 0.75rem;
   padding: 1rem;
   display: flex;
@@ -513,7 +516,7 @@
 .detail-section-header {
   font-size: 0.75rem;
   font-weight: 700;
-  color: #0F172A;
+  color: var(--foreground);
   display: flex;
   align-items: center;
 }
@@ -523,8 +526,8 @@
 }
 
 .mode-tag {
-  background-color: #FEF3C7;
-  color: #B45309;
+  background-color: color-mix(in srgb, var(--chart-3) 20%, var(--card));
+  color: var(--chart-3);
   border: none;
   font-size: 0.625rem;
   margin-right: auto;
@@ -555,14 +558,14 @@
 .form-group label {
   font-size: 0.6875rem;
   font-weight: 700;
-  color: #475569;
+  color: var(--muted-foreground);
 }
 
 .action-add-btn {
   height: 1.75rem;
   font-size: 0.75rem;
   font-weight: 700;
-  background-color: #FFFFFF;
+  background-color: var(--card);
 }
 
 /* Data Tables inside cards */
@@ -572,11 +575,11 @@
 
 .amount-cell {
   font-weight: 700;
-  color: #059669;
+  color: var(--chart-2);
 }
 
 .notes-cell {
-  color: #64748B;
+  color: var(--muted-foreground);
 }
 
 .bold-cell {
@@ -584,23 +587,23 @@
 }
 
 .materials-table thead {
-  background-color: #FEF3C7;
-  color: #78350F;
+  background-color: color-mix(in srgb, var(--chart-3) 18%, var(--card));
+  color: var(--chart-3);
 }
 
 .empty-state-box {
-  border: 1px dashed #CBD5E1;
+  border: 1px dashed var(--border);
   border-radius: 0.5rem;
   padding: 0.75rem;
   text-align: center;
   font-size: 0.75rem;
-  color: #64748B;
+  color: var(--muted-foreground);
   font-weight: 600;
   cursor: pointer;
 }
 
 .empty-state-box:hover {
-  background-color: rgba(254, 243, 199, 0.5);
+  background-color: color-mix(in srgb, var(--chart-3) 12%, var(--card));
 }
 
 /* Modal Customization */
@@ -612,7 +615,7 @@
 .modal-title {
   font-size: 1.125rem;
   font-weight: 700;
-  color: #0F172A;
+  color: var(--foreground);
 }
 
 .modal-body {
@@ -627,17 +630,17 @@
   display: flex;
   gap: 0.5rem;
   padding-top: 0.5rem;
-  border-top: 1px solid #F1F5F9;
+  border-top: 1px solid var(--border);
 }
 
 .save-btn {
-  background-color: #0F172A;
-  color: #FFFFFF;
+  background-color: var(--primary);
+  color: var(--primary-foreground);
   border-radius: 0.5rem;
   font-size: 0.75rem;
   font-weight: 700;
 }
 
 .save-btn:hover {
-  background-color: #1E293B;
+  background-color: color-mix(in srgb, var(--primary) 85%, black);
 }

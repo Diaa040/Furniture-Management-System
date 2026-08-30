@@ -42,7 +42,6 @@ export default function DashboardPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["daily-transactions"] });
       setIsModalOpen(false);
-      window.location.reload();
     },
   });
 
