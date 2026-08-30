@@ -1,6 +1,8 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api";
+import { getApiErrorMessage } from "@/lib/error-helpers";
 
 export function usePaymentForm(
   orderId: number,
@@ -8,6 +10,7 @@ export function usePaymentForm(
   stageName: string,
 ) {
   const router = useRouter();
+  const queryClient = useQueryClient();
 
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [isViewOpen, setIsViewOpen] = useState(false);
@@ -26,13 +29,21 @@ export function usePaymentForm(
         notes: note,
       });
 
+      // بيحدّث بيانات المرحلة (المدفوع/المتبقي/التكلفة) وسجل الدفعات فورًا من غير ما تحتاج تعمل refresh يدوي
+      await queryClient.invalidateQueries({
+        queryKey: ["item-stages", orderId, itemId],
+      });
+      await queryClient.invalidateQueries({
+        queryKey: ["stage-payments", orderId, itemId, stageName],
+      });
+
       setIsAddOpen(false);
       setAmount("");
       setNote("");
       router.refresh();
     } catch (error) {
       console.error("حدث خطأ:", error);
-      alert("حدث خطأ أثناء حفظ الدفعة.");
+      alert(getApiErrorMessage(error, "حدث خطأ أثناء حفظ الدفعة."));
     } finally {
       setIsSubmitting(false);
     }
