@@ -1,5 +1,5 @@
 import { api } from "@/lib/api";
-import { WorkerOrderItemsResponse, WorkersResponse } from "@/types/workers";
+import { ICreateWorkerDTO, WorkerOrderItemsResponse, WorkersResponse } from "@/types/workers";
 
 
 export async function fetchWorkers(): Promise<WorkersResponse> {
@@ -29,5 +29,10 @@ export async function updateWorkerPaymentApi(paymentId: number, payment: number)
 
 export async function fetchOrderItemStages(orderId: number, itemId: number) {
   const response = await api.get(`/api/orders/${orderId}/items/${itemId}/stages`);
+  return response.data;
+}
+
+export async function createWorker(data: ICreateWorkerDTO) {
+  const response = await api.post("/api/workers", data);
   return response.data;
 }

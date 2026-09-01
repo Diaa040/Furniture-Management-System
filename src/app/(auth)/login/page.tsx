@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import Image from "next/image";
 import { useAuth } from "@/context/AuthContext";
 import { AxiosError } from "axios";
 
@@ -54,13 +55,27 @@ export default function LoginPage() {
   }
 
   return (
-    <main className="flex min-h-screen items-center justify-center bg-[#FDFBF7] p-6" dir="rtl">
-      <Card className="w-full max-w-md rounded-2xl border-sidebar-border/40 shadow-sm bg-white p-6">
+    <main
+      className="relative flex min-h-screen items-center justify-center overflow-hidden p-6"
+      dir="rtl"
+    >
+      {/* خلفية الصفحة */}
+      <Image
+        src="/login-bg.jpg"
+        alt=""
+        fill
+        priority
+        className="object-cover"
+      />
+      {/* طبقة تعتيم خفيفة فوق الصورة عشان الكارت يفضل واضح من غير ما يبوظ لون الصورة */}
+      <div className="absolute inset-0 bg-black/35" />
+
+      <Card className="relative z-10 w-full max-w-md rounded-2xl border border-amber-200/20 shadow-2xl shadow-black/50 bg-black/35 backdrop-blur-xl p-6">
         <CardHeader className="space-y-1 text-center pb-4">
-          <CardTitle className="text-2xl font-black text-[#2C2420]">
+          <CardTitle className="text-2xl font-black text-amber-100 tracking-wide">
             تسجيل الدخول
           </CardTitle>
-          <CardDescription className="text-xs text-muted-foreground font-bold">
+          <CardDescription className="text-xs text-amber-100/60 font-bold">
             أدخل بيانات حسابك للوصول إلى لوحة التحكم
           </CardDescription>
         </CardHeader>
@@ -68,7 +83,7 @@ export default function LoginPage() {
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-1.5 text-right">
-              <Label htmlFor="email" className="text-xs font-black text-[#2C2420]">
+              <Label htmlFor="email" className="text-xs font-black text-amber-100/90">
                 البريد الإلكتروني
               </Label>
               <Input
@@ -79,12 +94,12 @@ export default function LoginPage() {
                 placeholder="name@example.com"
                 required
                 disabled={loading}
-                className="rounded-xl border-gray-200 h-11 text-sm font-bold px-3.5"
+                className="rounded-xl border-amber-100/20 bg-white/10 text-amber-50 placeholder:text-amber-100/30 h-11 text-sm font-bold px-3.5 focus-visible:ring-amber-300/40 focus-visible:border-amber-200/40"
               />
             </div>
 
             <div className="space-y-1.5 text-right">
-              <Label htmlFor="password" className="text-xs font-black text-[#2C2420]">
+              <Label htmlFor="password" className="text-xs font-black text-amber-100/90">
                 كلمة المرور
               </Label>
               <Input
@@ -95,12 +110,12 @@ export default function LoginPage() {
                 placeholder="••••••••"
                 required
                 disabled={loading}
-                className="rounded-xl border-gray-200 h-11 text-sm font-bold px-3.5"
+                className="rounded-xl border-amber-100/20 bg-white/10 text-amber-50 placeholder:text-amber-100/30 h-11 text-sm font-bold px-3.5 focus-visible:ring-amber-300/40 focus-visible:border-amber-200/40"
               />
             </div>
 
             {error && (
-              <div className="rounded-xl bg-red-50 p-3 text-xs text-red-600 font-black border border-red-200">
+              <div className="rounded-xl bg-red-500/10 p-3 text-xs text-red-300 font-black border border-red-400/30">
                 {error}
               </div>
             )}
@@ -108,7 +123,7 @@ export default function LoginPage() {
             <Button
               type="submit"
               disabled={loading}
-              className="w-full bg-[#7C4A26] hover:bg-[#633a1e] text-white rounded-xl h-11 text-sm font-black gap-2 mt-2 shadow-md shadow-[#7C4A26]/10 transition-all"
+              className="w-full bg-linear-to-l from-amber-400 to-yellow-600 hover:from-amber-500 hover:to-yellow-700 text-[#2C2420] rounded-xl h-11 text-sm font-black gap-2 mt-2 shadow-md shadow-amber-900/30 transition-all"
             >
               {loading ? (
                 <Loader2 className="size-5 animate-spin" />

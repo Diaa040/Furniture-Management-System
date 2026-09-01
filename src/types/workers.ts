@@ -53,3 +53,7 @@ export interface EditWorkerPaymentModalProps {
 }
 
 
+export interface ICreateWorkerDTO {
+  name: string;
+  daily_wage: number;
+}

@@ -2,13 +2,8 @@
 
 import { useState } from "react";
 import {
-  CircleDollarSign,
   ArrowDownRight,
   ArrowUpRight,
-  ShoppingCart,
-  Warehouse,
-  Users,
-
   Plus,
   PlayCircle,
 } from "lucide-react";
@@ -16,12 +11,14 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { DailyTransactionsResponse } from "@/types/dashboard";
 import { fetchDailyTransaction, startNewDay } from "@/apis/dashboard.api";
 import { api } from "@/lib/api";
+import { useAuth } from "@/context/AuthContext";
 import AddTransactionModal from "@/components/AddTransactionModal";
 import StartNewDayModal from "@/components/StartNewDayModal";
 
 
 export default function DashboardPage() {
   const queryClient = useQueryClient();
+  const { user } = useAuth();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isNewDayModalOpen, setIsNewDayModalOpen] = useState(false);
 
@@ -64,6 +61,11 @@ export default function DashboardPage() {
     >
       {/* رأس الصفحة */}
       <div className="mb-8">
+        {user && (
+          <p className="text-2xl font-bold py-2 text-amber-700 mb-1.5">
+            أهلاً بيك، {user.name} 
+          </p>
+        )}
         <h1 className="text-2xl font-bold tracking-tight text-gray-900">
           لوحة التحكم
         </h1>
@@ -72,63 +74,8 @@ export default function DashboardPage() {
         </p>
       </div>
 
-      {/* الـ 4 كروت العلوية */}
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4 mb-8">
-        <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm flex items-center justify-between">
-          <div>
-            <p className="text-xs text-gray-400 font-medium mb-1">
-              إجمالي المبيعات
-            </p>
-            <h3 className="text-xl font-bold text-gray-900">125,000 ج.م</h3>
-            <span className="text-xs text-emerald-600 font-semibold mt-1 inline-block">
-              +12.5% عن الشهر السابق
-            </span>
-          </div>
-          <div className="w-12 h-12 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center">
-            <CircleDollarSign className="w-6 h-6" />
-          </div>
-        </div>
 
-        <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm flex items-center justify-between">
-          <div>
-            <p className="text-xs text-gray-400 font-medium mb-1">الطلبات</p>
-            <h3 className="text-xl font-bold text-gray-900">48</h3>
-            <span className="text-xs text-emerald-600 font-semibold mt-1 inline-block">
-              +8.2% عن الأسبوع الماضي
-            </span>
-          </div>
-          <div className="w-12 h-12 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center">
-            <ShoppingCart className="w-6 h-6" />
-          </div>
-        </div>
 
-        <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm flex items-center justify-between">
-          <div>
-            <p className="text-xs text-gray-400 font-medium mb-1">المخزون</p>
-            <h3 className="text-xl font-bold text-gray-900">320</h3>
-            <span className="text-xs text-rose-600 font-semibold mt-1 inline-block">
-              -3.1% انخفاض طفيف
-            </span>
-          </div>
-          <div className="w-12 h-12 rounded-xl bg-rose-50 text-rose-600 flex items-center justify-center">
-            <Warehouse className="w-6 h-6" />
-          </div>
-        </div>
-
-        <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm flex items-center justify-between">
-          <div>
-            <p className="text-xs text-gray-400 font-medium mb-1">العملاء</p>
-            <h3 className="text-xl font-bold text-gray-900">86</h3>
-            <span className="text-xs text-emerald-600 font-semibold mt-1 inline-block">
-              +5.4% عملاء جدد
-            </span>
-          </div>
-          <div className="w-12 h-12 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center">
-            <Users className="w-6 h-6" />
-          </div>
-        </div>
-      </div>
-      
       {/* الكروت الثلاثة الخاصة بملخص المعاملات */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
         <div className="bg-[#EBF9F1] border border-[#A7E8C3] rounded-2xl p-6 flex flex-col justify-between">
@@ -178,7 +125,7 @@ export default function DashboardPage() {
             >
               <Plus className="w-4 h-4" /> إضافة معاملة جديدة
             </button>
-            
+
           </div>
         </div>
 

@@ -17,7 +17,7 @@ interface NewMaterialPayload {
 
 export default function InventoryPage() {
   const [selectedId, setSelectedId] = useState<number>(1);
-  
+
   // 1. State للتحكم في فتح وإغلاق الـ Pop-up
   const [isModalOpen, setIsModalOpen] = useState(false);
 
@@ -40,6 +40,14 @@ export default function InventoryPage() {
     placeholderData: (previousData) => previousData,
   });
 
+  const resetForm = () => {
+    setMaterialName("");
+    setCurrentStock("");
+    setUnit("");
+    setUnitPrice("");
+    setMinStock("");
+  };
+
   // 2. Mutation لإرسال الخامة الجديدة للباك إند
   const addMaterialMutation = useMutation({
     mutationFn: async (newMaterialData: NewMaterialPayload) => {
@@ -48,23 +56,25 @@ export default function InventoryPage() {
     },
     onSuccess: () => {
       setIsModalOpen(false);
-      setMaterialName("");
-      setCurrentStock("");
-      setUnit("");
-      setUnitPrice("");
-      setMinStock("");
+      resetForm();
       queryClient.invalidateQueries({ queryKey: ['inventory', selectedId] });
     },
     onError: (err: unknown) => {
+      // بنسجل الخطأ في الكونسول بس، من غير أي alert للمستخدم
       const errorResponse = err as { response?: { data?: { message?: string } } };
-      console.log("خطأ الباك إند الكامل:", errorResponse.response?.data);
-      alert("خطأ من السيرفر: " + (errorResponse.response?.data?.message || "حدث خطأ غير معروف"));
+      console.error("خطأ الباك إند الكامل:", errorResponse.response?.data);
     },
   });
 
+  const handleCloseModal = () => {
+    setIsModalOpen(false);
+    resetForm();
+    addMaterialMutation.reset();
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     // مطابقة المفاتيح تماماً بالشكل الذي طلبه الباك إند
     const payload: NewMaterialPayload = {
       name: materialName,
@@ -73,17 +83,22 @@ export default function InventoryPage() {
       minimum_stock_level: minStock ? Number(minStock) : 0,
       unit_price: unitPrice ? Number(unitPrice) : 0,
     };
-    
+
     console.log("البيانات اللي رايحة للباك إند:", payload);
 
     addMaterialMutation.mutate(payload);
   };
 
+  const addMaterialErrorMessage = addMaterialMutation.isError
+    ? ((addMaterialMutation.error as { response?: { data?: { message?: string } } })?.response?.data
+        ?.message ?? "حدث خطأ أثناء إضافة الخامة، برجاء المحاولة مرة أخرى")
+    : "";
+
   if (error) return <div className="p-6 text-center text-red-500">حدث خطأ أثناء تحميل البيانات</div>;
 
   return (
     <div className="p-6 bg-[#FDFBF7] min-h-screen dir-rtl text-right font-sans relative">
-      
+
       {/* رأس الصفحة والأزرار العلوية */}
       <div className="flex justify-between items-center mb-8">
         <div>
@@ -93,7 +108,7 @@ export default function InventoryPage() {
           </p>
         </div>
         <div className="flex gap-3">
-          <button 
+          <button
             onClick={() => setIsModalOpen(true)}
             className="bg-[#8B5A2B] text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-[#724822] transition"
           >
@@ -135,11 +150,11 @@ export default function InventoryPage() {
       {isModalOpen && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
           <div className="bg-white rounded-2xl p-6 w-full max-w-md shadow-xl">
-            
+
             <div className="flex justify-between items-center mb-4 border-b pb-3">
               <h3 className="font-bold text-lg text-gray-800">إضافة خامة جديدة للكاتيجوري الحالي</h3>
-              <button 
-                onClick={() => setIsModalOpen(false)}
+              <button
+                onClick={handleCloseModal}
                 className="text-gray-400 hover:text-gray-600 font-bold text-xl"
               >
                 &times;
@@ -210,10 +225,17 @@ export default function InventoryPage() {
                 </div>
               </div>
 
+              {/* رسالة الخطأ بتظهر جوه المودال نفسه بدل الـ alert */}
+              {addMaterialErrorMessage && (
+                <div className="rounded-lg bg-red-50 border border-red-200 text-red-600 text-xs font-semibold px-3 py-2.5">
+                  {addMaterialErrorMessage}
+                </div>
+              )}
+
               <div className="flex justify-end gap-2 mt-4 border-t pt-3">
                 <button
                   type="button"
-                  onClick={() => setIsModalOpen(false)}
+                  onClick={handleCloseModal}
                   className="px-4 py-2 border border-gray-300 rounded-lg text-sm text-gray-600 hover:bg-gray-50"
                 >
                   إلغاء

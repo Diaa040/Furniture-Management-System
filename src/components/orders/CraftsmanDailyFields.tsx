@@ -32,24 +32,35 @@ export default function CraftsmanDailyFields({
     onCraftsmanSelect(worker);
   };
 
+  // بنجيب اسم الصنايعي المختار بنفسنا ونديه لـ SelectValue كـ children، عشان
+  // ماتسيبش الاعتماد على التقاط Radix التلقائي للنص (اللي كان بيرجع بيعرض
+  // الـ id بدل الاسم في بعض الحالات).
+  const selectedWorker = workers.find((w) => String(w.id) === craftsmanId);
+
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
       <div className="space-y-1.5 text-right">
         <Label className="text-xs font-black text-[#2C2420]">اسم الصنايعي</Label>
         <Select value={craftsmanId} onValueChange={handleChange}>
-          <SelectTrigger className="rounded-[18px] bg-white border-gray-200 h-11 text-right text-sm font-bold w">
+          <SelectTrigger className="w-full rounded-[18px] bg-white border-gray-200 h-11 text-right text-sm font-bold [&>span]:line-clamp-1 [&>span]:text-right">
             <SelectValue
               placeholder={isLoadingWorkers ? "جاري التحميل..." : "اختر الصنايعي"}
-            />
+            >
+              {selectedWorker?.name}
+            </SelectValue>
           </SelectTrigger>
-          <SelectContent>
+          <SelectContent className="min-w-(--radix-select-trigger-width)">
             {isLoadingWorkers ? (
               <div className="flex items-center justify-center py-3">
                 <Loader2 className="size-4 animate-spin text-gray-400" />
               </div>
             ) : (
               workers.map((worker) => (
-                <SelectItem key={worker.id} value={String(worker.id)}>
+                <SelectItem
+                  key={worker.id}
+                  value={String(worker.id)}
+                  className="text-right text-sm font-bold py-2.5"
+                >
                   {worker.name}
                 </SelectItem>
               ))

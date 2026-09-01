@@ -22,6 +22,7 @@ import { AddDetailDialog } from "@/components/orders/AddDetailDialog";
 import { useItemStages } from "@/hooks/use-orders";
 import { useAddDetailForm } from "@/hooks/use-add-detail-form";
 import { usePaymentForm } from "@/hooks/use-payment-form";
+import { usePersistedDailyInfo } from "@/hooks/use-persisted-daily-info";
 
 import {
   buildAllStages,
@@ -77,6 +78,15 @@ export default function ItemDetailsPage({
   // فورمات البنود والدفعات بقت جوّه هوكس منفصلة
   const detailForm = useAddDetailForm(orderId, itemId, currentStage.name);
   const paymentForm = usePaymentForm(orderId, itemId, currentStage.name);
+
+  // حل مؤقت لحد ما الباك إند يرجّع بيانات اليومية مع المرحلة: بنخزّنها في
+  // localStorage عشان الشكل ميرجعش "مصنعية بالعقد" بعد الـ refresh لو أصلاً
+  // اتحفظت كـ "يومية". القراءة/الكتابة بتتم على مستوى كل مرحلة لوحدها.
+  const [dailyInfo, setDailyInfo] = usePersistedDailyInfo(
+    orderId,
+    itemId,
+    currentStage.name,
+  );
 
   const handleStageChange = (stageName: string) => {
     setShowStartForm(false);
@@ -185,7 +195,10 @@ export default function ItemDetailsPage({
               orderId={orderId}
               itemId={itemId}
               stageName={currentStage.name}
-              onSuccess={() => setShowStartForm(false)}
+              onSuccess={(info) => {
+                setDailyInfo(info ?? null);
+                setShowStartForm(false);
+              }}
             />
           </div>
         ) : (
@@ -243,7 +256,10 @@ export default function ItemDetailsPage({
 
           <CardContent className="p-6 space-y-6">
             <WorkshopInfoCard
+              orderId={orderId}
+              itemId={itemId}
               stage={currentStage}
+              dailyInfo={dailyInfo}
               onAddPayment={() => paymentForm.setIsAddOpen(true)}
               onViewPayments={() => paymentForm.setIsViewOpen(true)}
             />

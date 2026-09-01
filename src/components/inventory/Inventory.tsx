@@ -15,6 +15,22 @@ interface InventoryProps {
   categoryId: number | string;
 }
 
+// بنجمّع منطق استخراج رسالة الخطأ من الرد في مكان واحد بدل ما يتكرر في كل mutation
+function extractErrorMessage(error: unknown, fallback: string): string {
+  if (axios.isAxiosError(error)) {
+    return (
+      error.response?.data?.message ||
+      error.response?.data?.error ||
+      error.message ||
+      fallback
+    );
+  }
+  if (error instanceof Error) {
+    return error.message || fallback;
+  }
+  return fallback;
+}
+
 export default function Inventory({ data, categoryId }: InventoryProps) {
   const queryClient = useQueryClient();
   const inventoryDetails = data.data;
@@ -34,6 +50,11 @@ export default function Inventory({ data, categoryId }: InventoryProps) {
   const [selectedMaterialForPayments, setSelectedMaterialForPayments] =
     useState<{ id: number; name: string } | null>(null);
   const [isLoadingPayments, setIsLoadingPayments] = useState(false);
+
+  // --- حالة خاصة بمودال تأكيد حذف دفعة (بدل الـ confirm/alert) ---
+  const [paymentIdPendingDelete, setPaymentIdPendingDelete] = useState<
+    number | null
+  >(null);
 
   // دالة فتح بوب اب عرض الدفعات وجلب البيانات مباشرة
   const openPaymentsModal = async (
@@ -67,6 +88,7 @@ export default function Inventory({ data, categoryId }: InventoryProps) {
     setIsPaymentsModalOpen(false);
     setPaymentsList([]);
     setSelectedMaterialForPayments(null);
+    deletePaymentMutation.reset();
   };
 
   // استخدام useMutation لإرسال الدفعة
@@ -78,23 +100,11 @@ export default function Inventory({ data, categoryId }: InventoryProps) {
     }) => AddInventoryPayment(categoryId, paymentData),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["inventory", categoryId] });
-      alert("تم اضافه الدفعه بنجاح");
       closeModal();
     },
     onError: (error: unknown) => {
+      // بنسجل الخطأ في الكونسول بس، والرسالة بتتعرض جوه المودال نفسه (تحت)
       console.error("الخطأ الكامل القادم من السيرفر:", error);
-      let errorMessage = "حدث خطأ أثناء إضافة الدفعة";
-
-      if (axios.isAxiosError(error)) {
-        errorMessage =
-          error.response?.data?.message ||
-          error.response?.data?.error ||
-          error.message;
-      } else if (error instanceof Error) {
-        errorMessage = error.message;
-      }
-
-      alert("خطأ: " + errorMessage);
     },
   });
 
@@ -112,6 +122,7 @@ export default function Inventory({ data, categoryId }: InventoryProps) {
     setSelectedMaterialName("");
     setQuantity("");
     setUnitPrice("");
+    addPaymentMutation.reset();
   };
 
   // تنفيذ الإرسال عند الضغط على زر حفظ
@@ -128,20 +139,20 @@ export default function Inventory({ data, categoryId }: InventoryProps) {
     addPaymentMutation.mutate(payload);
   };
 
- // 1. تعديل mutation الحذف لتستقبل paymentId فقط وتجلب raw_material_id من الـ state الحالي
+  // mutation الحذف تستقبل paymentId فقط وتجلب raw_material_id من الـ state الحالي
   const deletePaymentMutation = useMutation({
     mutationFn: (paymentId: number) => {
       const rawMaterialId = selectedMaterialForPayments?.id;
       if (!rawMaterialId) throw new Error("لم يتم تحديد الخامة");
       return DeleteInventoryPayment(
-        Number(categoryId),     
-        Number(rawMaterialId),  
-        Number(paymentId)       
+        Number(categoryId),
+        Number(rawMaterialId),
+        Number(paymentId),
       );
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["inventory", categoryId] });
-      alert("تم حذف الدفعة بنجاح");
+      setPaymentIdPendingDelete(null);
 
       // إعادة تحديث قائمة الدفعات داخل الـ Modal المفتوح حالياً
       if (selectedMaterialForPayments) {
@@ -152,22 +163,34 @@ export default function Inventory({ data, categoryId }: InventoryProps) {
       }
     },
     onError: (error: unknown) => {
-      let errorMessage = "حدث خطأ أثناء حذف الدفعة";
-      if (axios.isAxiosError(error)) {
-        errorMessage = error.response?.data?.message || error.message;
-      } else if (error instanceof Error) {
-        errorMessage = error.message;
-      }
-      alert("خطأ: " + errorMessage);
+      console.error("خطأ أثناء حذف الدفعة:", error);
+      // بنسيب مودال التأكيد مقفول عشان رسالة الخطأ تبان في مودال الدفعات نفسه
+      setPaymentIdPendingDelete(null);
     },
   });
 
-  // دالة تنفيذ الحذف عند الضغط على الزر
+  // دالة فتح مودال تأكيد الحذف بدل الـ confirm() المباشر
   const handleDeletePayment = (paymentId: number) => {
-    if (confirm("هل أنت متأكد من رغبتك في حذف هذه الدفعة؟")) {
-      deletePaymentMutation.mutate(paymentId);
+    setPaymentIdPendingDelete(paymentId);
+  };
+
+  const confirmDeletePayment = () => {
+    if (paymentIdPendingDelete != null) {
+      deletePaymentMutation.mutate(paymentIdPendingDelete);
     }
   };
+
+  const cancelDeletePayment = () => {
+    setPaymentIdPendingDelete(null);
+  };
+
+  const addPaymentErrorMessage = addPaymentMutation.isError
+    ? extractErrorMessage(addPaymentMutation.error, "حدث خطأ أثناء إضافة الدفعة")
+    : "";
+
+  const deletePaymentErrorMessage = deletePaymentMutation.isError
+    ? extractErrorMessage(deletePaymentMutation.error, "حدث خطأ أثناء حذف الدفعة")
+    : "";
 
   return (
     <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden relative">
@@ -279,6 +302,13 @@ export default function Inventory({ data, categoryId }: InventoryProps) {
                 />
               </div>
 
+              {/* رسالة الخطأ جوه المودال بدل الـ alert */}
+              {addPaymentErrorMessage && (
+                <div className="rounded-lg bg-red-50 border border-red-200 text-red-600 text-xs font-semibold px-3 py-2.5">
+                  {addPaymentErrorMessage}
+                </div>
+              )}
+
               <div className="flex justify-end gap-2 mt-6">
                 <button
                   type="button"
@@ -324,6 +354,13 @@ export default function Inventory({ data, categoryId }: InventoryProps) {
                 ✕
               </button>
             </div>
+
+            {/* رسالة خطأ الحذف بتظهر هنا بدل الـ alert */}
+            {deletePaymentErrorMessage && (
+              <div className="mb-3 rounded-lg bg-red-50 border border-red-200 text-red-600 text-xs font-semibold px-3 py-2.5">
+                {deletePaymentErrorMessage}
+              </div>
+            )}
 
             <div className="overflow-y-auto flex-1">
               {isLoadingPayments ? (
@@ -372,7 +409,8 @@ export default function Inventory({ data, categoryId }: InventoryProps) {
                               disabled={deletePaymentMutation.isPending}
                               className="px-3 py-1 bg-red-50 text-red-600 hover:bg-red-100 rounded-lg text-xs font-medium transition disabled:opacity-50"
                             >
-                              {deletePaymentMutation.isPending
+                              {deletePaymentMutation.isPending &&
+                              paymentIdPendingDelete === payment.id
                                 ? "جاري الحذف..."
                                 : "حذف"}
                             </button>
@@ -390,6 +428,39 @@ export default function Inventory({ data, categoryId }: InventoryProps) {
                 className="px-4 py-2 text-xs font-medium text-gray-600 bg-gray-100 rounded-lg hover:bg-gray-200 transition"
               >
                 إغلاق
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* --- مودال تأكيد حذف دفعة (بديل الـ confirm) --- */}
+      {paymentIdPendingDelete !== null && (
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-[60] p-4">
+          <div className="bg-white rounded-2xl p-6 w-full max-w-sm shadow-xl text-center">
+            <h3 className="text-base font-bold text-gray-800 mb-2">
+              تأكيد حذف الدفعة
+            </h3>
+            <p className="text-sm text-gray-500 mb-6">
+              هل أنت متأكد من رغبتك في حذف هذه الدفعة؟ لا يمكن التراجع عن هذا
+              الإجراء.
+            </p>
+            <div className="flex justify-center gap-3">
+              <button
+                type="button"
+                onClick={cancelDeletePayment}
+                disabled={deletePaymentMutation.isPending}
+                className="px-5 py-2 text-sm font-medium text-gray-600 bg-gray-100 rounded-lg hover:bg-gray-200 transition disabled:opacity-50"
+              >
+                إلغاء
+              </button>
+              <button
+                type="button"
+                onClick={confirmDeletePayment}
+                disabled={deletePaymentMutation.isPending}
+                className="px-5 py-2 text-sm font-bold text-white bg-red-600 rounded-lg hover:bg-red-700 transition disabled:opacity-50"
+              >
+                {deletePaymentMutation.isPending ? "جاري الحذف..." : "حذف"}
               </button>
             </div>
           </div>

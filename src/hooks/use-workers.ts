@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { fetchWorkers, fetchWorkerOrderItems, fetchWorkerPayments, addWorkerPaymentApi, updateWorkerPaymentApi} from "@/apis/workers.api";
 import { IWorker, WorkerOrderItem, WorkerPayment } from "@/types/workers";
+import { api } from "@/lib/api";
 
 
 export function useWorkers() {
@@ -77,3 +78,26 @@ export function useUpdateWorkerPayment(workerId: number | null) {
   });
 }
 
+interface UpdateWorkerPayload {
+  id: number;
+  name: string;
+  daily_wage: number;
+}
+
+export function useUpdateWorker() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ id, name, daily_wage }: UpdateWorkerPayload) => {
+      const { data } = await api.put(`/api/workers/${id}`, {
+        name,
+        daily_wage,
+      });
+      return data;
+    },
+    onSuccess: () => {
+      // تحديث قائمة العمال فوراً بعد التعديل الناجح
+      queryClient.invalidateQueries({ queryKey: ["workers"] });
+    },
+  });
+}

@@ -18,6 +18,21 @@ export const metadata: Metadata = {
   description: "Furniture Management System",
 };
 
+const THEME_INIT_SCRIPT = `
+  (function () {
+    try {
+      var theme = localStorage.getItem("theme");
+      var root = document.documentElement;
+
+      if (theme === "dark") {
+        root.classList.add("dark");
+      } else if (theme === "light") {
+        root.classList.remove("dark");
+      }
+    } catch (e) {}
+  })();
+`;
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -26,22 +41,11 @@ export default function RootLayout({
   return (
     <html lang="ar" dir="rtl" suppressHydrationWarning>
       <body className={`${tajawal.variable} ${tajawal.className} antialiased`}>
-        <Script id="theme-script" strategy="beforeInteractive">
-          {`
-            (function () {
-              try {
-                var theme = localStorage.getItem("theme");
-                var root = document.documentElement;
-
-                if (theme === "dark") {
-                  root.classList.add("dark");
-                } else if (theme === "light") {
-                  root.classList.remove("dark");
-                }
-              } catch (e) {}
-            })();
-          `}
-        </Script>
+        <Script
+          id="theme-script"
+          strategy="beforeInteractive"
+          dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }}
+        />
 
         <ReactQueryProvider>
           <TooltipProvider>

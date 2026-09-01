@@ -33,22 +33,16 @@ export function StartStageForm({
     "internal",
   );
 
-  // طريقة صرف الصنايعي: مصنعية (ديفولت) أو يومية
-  // ملحوظة: ده اختيار في الواجهة بس، الباك إند مش عارف بيه —
-  // في الآخر بنجمّع الاتنين في نفس handler_name / agreed_cost
   const [paymentType, setPaymentType] = useState<CraftsmanPaymentType>(
     "contract",
   );
 
-  // مستخدمة في وضع "مصنعية" (وبرضو في "خارجي")
   const [handlerName, setHandlerName] = useState("");
   const [agreedCost, setAgreedCost] = useState<string>("");
 
-  // مستخدمة في وضع "يومية"
   const [craftsmanId, setCraftsmanId] = useState("");
   const [selectedWorker, setSelectedWorker] = useState<Worker | null>(null);
 
-  // هيتجاب من الباك اند بس أول ما يدوس المستخدم على "يومية"
   const { data: workers = [], isLoading: isLoadingWorkers } = useOrderWorkers(
     paymentType === "daily",
   );
@@ -65,8 +59,14 @@ export function StartStageForm({
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
-    // نفس الـ 4 حقول بالظبط اللي الباك إند بيعمل عليها validate،
-    // مهما كان وضع الواجهة (مصنعية / يومية / داخلي / خارجي)
+    const infoPayload =
+      isDailyMode && selectedWorker
+        ? {
+            workerName: selectedWorker.name,
+            dailyRate: Number(selectedWorker.daily_wage) || 0,
+          }
+        : null;
+
     startStage.mutate(
       {
         stage_name: stageName,
@@ -77,17 +77,13 @@ export function StartStageForm({
         agreed_cost: isDailyMode
           ? Number(selectedWorker?.daily_wage) || 0
           : Number(agreedCost) || 0,
+        ...(isDailyMode && selectedWorker
+          ? { worker_id: selectedWorker.id }
+          : {}),
       },
       {
         onSuccess: () => {
-          onSuccess?.(
-            isDailyMode && selectedWorker
-              ? {
-                  workerName: selectedWorker.name,
-                  dailyRate: Number(selectedWorker.daily_wage) || 0,
-                }
-              : null,
-          );
+          onSuccess?.(infoPayload);
         },
       },
     );
@@ -110,7 +106,6 @@ export function StartStageForm({
       )}
 
       <form onSubmit={handleSubmit} className="space-y-6">
-        {/* 1. نوع التنفيذ */}
         <div className="space-y-3">
           <Label className="text-sm font-extrabold text-foreground block text-right">
             نوع التنفيذ *
@@ -141,7 +136,6 @@ export function StartStageForm({
           </div>
         </div>
 
-        {/* 2. بيانات المصنعية / الورشة */}
         <div className="bg-accent/40 p-5 rounded-[24px] border border-primary/20 space-y-4">
           <div className="flex items-center justify-between flex-wrap gap-3">
             <h4 className="font-extrabold text-base text-foreground flex items-center gap-2 text-right">
@@ -194,7 +188,6 @@ export function StartStageForm({
           )}
         </div>
 
-        {/* أزرار الحفظ */}
         <div className="flex items-center justify-start gap-3 pt-3 border-t border-border">
           <Button
             type="submit"
