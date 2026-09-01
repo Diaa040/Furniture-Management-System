@@ -28,6 +28,9 @@ export default function HandlersCustodyPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedItem, setSelectedItem] = useState<{ id: number; name: string } | null>(null);
   const [usedQuantityInput, setUsedQuantityInput] = useState("");
+  
+  // 1. أضفنا State لتخزين رسالة الخطأ داخل الـ Modal
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const { data: responseData, isLoading } = useQuery<HandlerMaterialsResponse>({
     queryKey: ["handlers-custody"],
@@ -38,7 +41,7 @@ export default function HandlersCustodyPage() {
     mutationFn: updateUsedQuantity,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["handlers-custody"] });
-      alert("تم تحديث الكمية المستخدمة بنجاح");
+      
       closeModal();
     },
     onError: (error) => {
@@ -46,13 +49,15 @@ export default function HandlersCustodyPage() {
       if (axios.isAxiosError(error)) {
         msg = error.response?.data?.message || error.message;
       }
-      alert("خطأ: " + msg);
+      // 2. تعيين رسالة الخطأ في الـ State لتظهر داخل الـ Modal
+      setErrorMessage(msg);
     },
   });
 
   const openModal = (id: number, name: string) => {
     setSelectedItem({ id, name });
     setUsedQuantityInput("");
+    setErrorMessage(null); // مسح أي خطأ قديم عند الفتح
     setIsModalOpen(true);
   };
 
@@ -60,11 +65,15 @@ export default function HandlersCustodyPage() {
     setIsModalOpen(false);
     setSelectedItem(null);
     setUsedQuantityInput("");
+    setErrorMessage(null); // مسح الخطأ عند الإغلاق
   };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedItem) return;
+
+    // مسح الخطأ القديم قبل بدء طلب جديد
+    setErrorMessage(null);
 
     updateUsedMutation.mutate({
       id: selectedItem.id,
@@ -158,6 +167,13 @@ export default function HandlersCustodyPage() {
               <p className="text-sm text-blue-600 font-semibold mb-4">
                 {selectedItem.name}
               </p>
+            )}
+
+            {/* 3. عرض رسالة الخطأ هنا داخل الـ Modal إذا وجدت */}
+            {errorMessage && (
+              <div className="mb-4 p-3 bg-red-50 border border-red-200 text-red-600 text-sm rounded-lg">
+                {errorMessage}
+              </div>
             )}
 
             <form onSubmit={handleSubmit} className="space-y-4">

@@ -1,7 +1,7 @@
 'use client';
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { AddItem, getOrderStagesCost, ordersApi, updateOrderItem , } from '@/apis/order.api';
+import { AddItem, getOrderStagesCost, getOrderWorkers, ordersApi, updateOrderItem , } from '@/apis/order.api';
 import { CreateOrderPayload, OrderDetails, ItemStagesResponse, TAddItem } from '@/types/order';
 import axios from 'axios';
 import { TUpdateItemPayload } from "@/types/order";
@@ -22,7 +22,9 @@ export function useDeleteOrderPayment(orderId: number | string) {
       ordersApi.deleteOrderPayment(orderId, paymentId),
 
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["order-details", orderId] });
+      // توحيد النوع إلى String لضمان المطابقة بغض النظر عن مصدر الـ ID
+      queryClient.invalidateQueries({ queryKey: ["order-details", String(orderId)] });
+      queryClient.invalidateQueries({ queryKey: ["order-stages-cost", String(orderId)] });
       queryClient.invalidateQueries({ queryKey: ["orders"] });
     },
   });
@@ -181,3 +183,11 @@ export function useOrderStagesCost(orderId: number | string) {
 
 
 
+export function useOrderWorkers( enabled : boolean = true) {
+  return useQuery({
+    queryKey: ["workers"],
+    queryFn: getOrderWorkers,
+    select: (res) => res.data,
+    enabled,
+  });
+}

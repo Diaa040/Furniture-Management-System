@@ -19,7 +19,11 @@ export function StageTabs({ stages, activeIndex, onChange }: StageTabsProps) {
 
           return (
             <button
-              key={stg.id}
+              // بنستخدم stg.order كـ key مش stg.id، لأن order دايمًا فريد ومن 1 لـ 5
+              // (ترتيب المرحلة الثابت)، على عكس id اللي ممكن يكون رقم حقيقي من
+              // قاعدة البيانات لو المرحلة اتبدأت، وممكن يتصادم بالصدفة مع رقم
+              // افتراضي (1-5) لمرحلة تانية لسه ما بدأتش.
+              key={stg.order}
               onClick={() => onChange(stg.name)}
               className={`relative flex items-center gap-2.5 py-5 text-base font-extrabold transition-colors whitespace-nowrap ${
                 isActive

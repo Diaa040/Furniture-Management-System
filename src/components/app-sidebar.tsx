@@ -34,10 +34,17 @@ const navigationGroups = [
     ],
   },
   {
+    title: "الصنايعية",
+    items: [
+      { title: "الصنايعية", url: "/workers" },
+    ],
+  },
+  {
     title: "الحسابات",
     items: [
       { title: "الأرباح الشهرية", url: "/profits" },
       { title: "الحركة المالية", url: "/treasury" },
+      { title: "المعاملات اليوميه ", url: "/dailyTransaction" },
       
     ],
   },

@@ -25,7 +25,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="ar" dir="rtl" suppressHydrationWarning>
-      <body className={`${tajawal.variable} ${tajawal.className} antialiased bg-[#FDFBF7]`}>
+      <body className={`${tajawal.variable} ${tajawal.className} antialiased`}>
         <Script id="theme-script" strategy="beforeInteractive">
           {`
             (function () {

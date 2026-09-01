@@ -169,3 +169,17 @@ export interface EditStageInitialData {
   workshopName: string;
   agreedCost: number;
 }
+
+export interface Worker {
+  id: number;
+  name: string;
+  daily_wage: string;
+  created_at: string | null;
+  updated_at: string;
+  payment: string;
+}
+
+export interface WorkersResponse {
+  status: boolean;
+  data: Worker[];
+}

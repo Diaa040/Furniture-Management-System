@@ -171,3 +171,22 @@ export const stageApi = {
     return response.data;
   },
 };
+
+import { WorkersResponse } from "@/types/workers";
+
+export async function getOrderWorkers(): Promise<WorkersResponse> {
+  const res = await fetch(
+    `${process.env.NEXT_PUBLIC_API_BASE_URL}/get-worker`,
+    {
+      headers: {
+        Accept: "application/json",
+      },
+    },
+  );
+
+  if (!res.ok) {
+    throw new Error("حدث خطأ أثناء جلب بيانات الصنايعية");
+  }
+
+  return res.json();
+}

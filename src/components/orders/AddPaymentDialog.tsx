@@ -38,7 +38,7 @@ export function AddPaymentDialog({
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md dir-rtl rounded-2xl bg-white p-6">
         <DialogHeader>
-          <DialogTitle className="text-xl font-black text-[#2C2420] text-right">
+          <DialogTitle className="text-xl font-black text-[#2C2420] text-center">
             إضافة دفعة جديدة لصنيعي ({stageName})
           </DialogTitle>
         </DialogHeader>
