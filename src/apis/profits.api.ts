@@ -3,7 +3,7 @@ import { MonthlyReportResponse, ProfitReportType } from "@/types/profits";
 
 // الدالة الافتراضية (عند الدخول للصفحة أول مرة)
 export async function fetchMonthlyReport(): Promise<MonthlyReportResponse> {
-  const response = await api.get<MonthlyReportResponse>("api/finance/monthly-report");
+  const response = await api.get<MonthlyReportResponse>("/api/finance/monthly-report");
   return response.data;
 }
 

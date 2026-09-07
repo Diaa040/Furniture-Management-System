@@ -12,6 +12,8 @@ import type {
   StartStagePayload,
 } from "@/types/order";
 
+import { WorkersResponse } from "@/types/workers";
+
 export async function getItemStages(
   orderId: number,
   itemId: number,
@@ -31,7 +33,7 @@ export const ordersApi = {
 
   // 0️⃣ جلب مراحل قطعة معينة
   getItemStages,
-  
+
   // 1️⃣ عرض جميع الأوردرات مع Pagination
   getOrders: async (page = 1) => {
     const response = await api.get<{
@@ -41,10 +43,11 @@ export const ordersApi = {
     return response.data;
   },
 
-  deleteOrderPayment: async  (orderId : number | string , paymentId : number | string )=>{
-    const responce = await api.delete(`/api/orders/${orderId}/payments/${paymentId}`);
-    return responce.data;
+  deleteOrderPayment: async (orderId: number | string, paymentId: number | string) => {
+    const response = await api.delete(`/api/orders/${orderId}/payments/${paymentId}`);
+    return response.data;
   },
+
   // 2️⃣ عرض تفاصيل أوردر معين
   getOrderDetails: async (id: number) => {
     const response = await api.get<{ status: boolean; data: OrderDetails }>(
@@ -60,9 +63,9 @@ export const ordersApi = {
   },
 
   addOrderCustomerPayment: async (orderId: number, payload: { amount: number }) => {
-  const response = await api.post(`/api/orders/${orderId}/payments`, payload);
-  return response.data;
-},
+    const response = await api.post(`/api/orders/${orderId}/payments`, payload);
+    return response.data;
+  },
 
   // 4️⃣ تحديث بيانات أوردر
   updateOrder: async (id: number, payload: Partial<OrderListItem>) => {
@@ -108,6 +111,7 @@ export const ordersApi = {
     );
     return response.data;
   },
+
   async getStagePayments(orderId: number, itemId: number, stageName: string) {
     const response = await api.get(`/api/orders/${orderId}/items/${itemId}/payments`, {
       params: {
@@ -117,8 +121,7 @@ export const ordersApi = {
     return response.data;
   },
 
-}
-
+};
 
 export async function AddItem(orderId: string | number, data: TAddItem): Promise<TAddItem> {
   const response = await api.post(`/api/order-items/${orderId}`, data);
@@ -126,37 +129,35 @@ export async function AddItem(orderId: string | number, data: TAddItem): Promise
 }
 
 export async function updateOrderItem(
-  id: number, 
+  id: number,
   itemData: Partial<TUpdateItemPayload>
 ): Promise<TUpdateItemPayload> {
   const response = await api.patch(`/api/order-items/${id}`, itemData);
   return response.data.data;
 }
 
-
+// ⚠️ تم تعديل المسار من "/orders/..." إلى "/api/orders/..." ليتوافق مع باقي الـ endpoints في الملف
 export const startStageService = async (
   orderId: string | number,
   itemId: string | number,
   payload: StartStagePayload
 ) => {
   const response = await api.post(
-    `/orders/${orderId}/items/${itemId}/stages`,
+    `/api/orders/${orderId}/items/${itemId}/stages`,
     payload
   );
   return response.data;
 };
 
-
 export async function getOrderStagesCost(orderId: number | string) {
   try {
-    const response = await api.get(`/api/orders/${orderId}`); 
+    const response = await api.get(`/api/orders/${orderId}`);
     return response.data;
   } catch (error) {
     console.error("Error fetching order stages cost:", error);
     return { totalOrderStagesCost: 0 };
   }
 }
-
 
 export const stageApi = {
   updateStage: async (
@@ -172,21 +173,8 @@ export const stageApi = {
   },
 };
 
-import { WorkersResponse } from "@/types/workers";
-
+// ⚠️ تم تعديلها لتستخدم "api" بدلاً من "fetch" العادي، عشان يترفق التوكين تلقائياً
 export async function getOrderWorkers(): Promise<WorkersResponse> {
-  const res = await fetch(
-    `${process.env.NEXT_PUBLIC_API_BASE_URL}/get-worker`,
-    {
-      headers: {
-        Accept: "application/json",
-      },
-    },
-  );
-
-  if (!res.ok) {
-    throw new Error("حدث خطأ أثناء جلب بيانات الصنايعية");
-  }
-
-  return res.json();
+  const response = await api.get<WorkersResponse>("/api/get-worker");
+  return response.data;
 }

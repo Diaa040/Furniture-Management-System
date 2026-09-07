@@ -1,14 +1,30 @@
 import type { Metadata } from "next";
-import { Tajawal } from "next/font/google";
+import localFont from "next/font/local";
 import Script from "next/script";
 import "./globals.css";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider } from "@/context/AuthContext";
 import ReactQueryProvider from "@/providers/src/providers/ReactQueryProvider";
 
-const tajawal = Tajawal({
-  weight: ["400", "500", "700"],
-  subsets: ["arabic"],
+// تأكد إن ملفات الخط موجودة فعلاً في المسار ده: src/fonts/tajawal/
+const tajawal = localFont({
+  src: [
+    {
+      path: "../fonts/tajawal/Tajawal-Regular.woff2",
+      weight: "400",
+      style: "normal",
+    },
+    {
+      path: "../fonts/tajawal/Tajawal-Medium.woff2",
+      weight: "500",
+      style: "normal",
+    },
+    {
+      path: "../fonts/tajawal/Tajawal-Bold.woff2",
+      weight: "700",
+      style: "normal",
+    },
+  ],
   variable: "--font-tajawal",
   display: "swap",
 });

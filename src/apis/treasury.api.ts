@@ -17,7 +17,7 @@ export function useAdminWithdrawals(page: number = 1, enabled: boolean = true) {
     queryKey: ["admin-withdrawals", page],
     queryFn: async () => {
       const { data } = await api.get<AdminWithdrawalsResponse>(
-        `/api/finance/get/admin-withdrawals`
+        `/api/finance/get/admin-withdrawals` , { params: { page } }
       );
       return data;
     },
