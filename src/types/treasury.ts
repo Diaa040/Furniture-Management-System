@@ -26,9 +26,10 @@ export interface PaginationLink {
   active: boolean;
 }
 
-export interface AdminWithdrawalPaginatedData {
+// شكل موحد لأي Laravel paginator بيرجع من الباك اند (نفس الشكل بتاع withdrawals)
+export interface PaginatedData<T> {
   current_page: number;
-  data: AdminWithdrawalItem[];
+  data: T[];
   first_page_url: string;
   from: number;
   last_page: number;
@@ -42,23 +43,27 @@ export interface AdminWithdrawalPaginatedData {
   total: number;
 }
 
+// alias للتوافق مع أي كود قديم بيستخدم الاسم ده
+export type AdminWithdrawalPaginatedData = PaginatedData<AdminWithdrawalItem>;
+
 export interface AdminWithdrawalsResponse {
   status: boolean;
   total_amount: string;
-  data: AdminWithdrawalPaginatedData;
+  data: PaginatedData<AdminWithdrawalItem>;
 }
 
 export interface ReceivableItem {
   id: number;
   customer_name: string;
   remaining_amount: string;
-  delivery_date: string;
+  delivery_date: string | null;
 }
 
-export interface ReceivablesResponse {
+// ✅ الشكل الحقيقي المؤكد من الـ response: بيانات الباجينيشن (current_page, last_page, data...)
+// كلها في نفس مستوى message و total_remaining، مش متداخلة جوه data
+export interface ReceivablesResponse extends PaginatedData<ReceivableItem> {
   message: string;
   total_remaining: number;
-  data: ReceivableItem[];
 }
 
 export interface StageFinancialItem {
@@ -66,7 +71,7 @@ export interface StageFinancialItem {
   remaining_amount: number;
 }
 
-export interface StagesFinancialsResponse {
+// ⚠️ افتراض إنها بنفس شكل receivables (flat) - تأكد منها لو الجدول فضل فاضي
+export interface StagesFinancialsResponse extends PaginatedData<StageFinancialItem> {
   total_remaining: number;
-  data: StageFinancialItem[];
 }

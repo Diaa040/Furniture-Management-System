@@ -6,21 +6,21 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider } from "@/context/AuthContext";
 import ReactQueryProvider from "@/providers/src/providers/ReactQueryProvider";
 
-// تأكد إن ملفات الخط موجودة فعلاً في المسار ده: src/fonts/tajawal/
+
 const tajawal = localFont({
   src: [
     {
-      path: "../fonts/tajawal/Tajawal-Regular.woff2",
+      path: "../fonts/tajawal/tajawal-v12-arabic-regular.woff2",
       weight: "400",
       style: "normal",
     },
     {
-      path: "../fonts/tajawal/Tajawal-Medium.woff2",
+      path: "../fonts/tajawal/tajawal-v12-arabic-500.woff2",
       weight: "500",
       style: "normal",
     },
     {
-      path: "../fonts/tajawal/Tajawal-Bold.woff2",
+      path: "../fonts/tajawal/tajawal-v12-arabic-700.woff2",
       weight: "700",
       style: "normal",
     },

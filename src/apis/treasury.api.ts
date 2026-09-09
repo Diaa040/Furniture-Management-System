@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { AdminWithdrawalsResponse, ReceivablesResponse, TreasuryResponse , StagesFinancialsResponse } from "@/types/treasury";
+import { AdminWithdrawalsResponse, ReceivablesResponse, TreasuryResponse, StagesFinancialsResponse } from "@/types/treasury";
 import { api } from "@/lib/api";
 
 export function useTreasury() {
@@ -17,7 +17,8 @@ export function useAdminWithdrawals(page: number = 1, enabled: boolean = true) {
     queryKey: ["admin-withdrawals", page],
     queryFn: async () => {
       const { data } = await api.get<AdminWithdrawalsResponse>(
-        `/api/finance/get/admin-withdrawals` , { params: { page } }
+        `/api/finance/get/admin-withdrawals`,
+        { params: { page } } // ⚠️ كانت الـ page مش بتتبعت للباك اند خالص، اتصلحت هنا
       );
       return data;
     },
@@ -25,22 +26,26 @@ export function useAdminWithdrawals(page: number = 1, enabled: boolean = true) {
   });
 }
 
-export function useReceivables(enabled: boolean = true) {
+export function useReceivables(page: number = 1, enabled: boolean = true) {
   return useQuery({
-    queryKey: ["receivables"],
+    queryKey: ["receivables", page],
     queryFn: async () => {
-      const { data } = await api.get<ReceivablesResponse>("/api/finance/receivables");
+      const { data } = await api.get<ReceivablesResponse>("/api/finance/receivables", {
+        params: { page },
+      });
       return data;
     },
     enabled,
   });
 }
 
-export function useStagesFinancials(enabled: boolean = true) {
+export function useStagesFinancials(page: number = 1, enabled: boolean = true) {
   return useQuery({
-    queryKey: ["stages-financials"],
+    queryKey: ["stages-financials", page],
     queryFn: async () => {
-      const { data } = await api.get<StagesFinancialsResponse>("/api/finance/stages-financials");
+      const { data } = await api.get<StagesFinancialsResponse>("/api/finance/stages-financials", {
+        params: { page },
+      });
       return data;
     },
     enabled,

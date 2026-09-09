@@ -12,33 +12,95 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { ArrowRight, Loader2, Wallet, TrendingUp, TrendingDown, ArrowUpRight, ShieldAlert, FileText, Plus } from "lucide-react";
-import { useTreasury } from "@/apis/treasury.api";
-import { useAdminWithdrawals } from "@/apis/treasury.api";
-import { useReceivables , useStagesFinancials} from "@/apis/treasury.api";
+import {
+  ArrowRight,
+  ChevronLeft,
+  ChevronRight,
+  Loader2,
+  Wallet,
+  TrendingUp,
+  TrendingDown,
+  ArrowUpRight,
+  ShieldAlert,
+  FileText,
+  Plus,
+} from "lucide-react";
+import { useTreasury, useAdminWithdrawals, useReceivables, useStagesFinancials } from "@/apis/treasury.api";
 import AdminWithdrawalModal from "@/components/AdminWithdrawalModal";
-import { AdminWithdrawalItem , ReceivableItem , StageFinancialItem} from "@/types/treasury";
+import { AdminWithdrawalItem, ReceivableItem, StageFinancialItem } from "@/types/treasury";
+
 type ActiveTableType = null | "withdrawals" | "receivables" | "stages";
+
+// كنترول باجينيشن بسيط قابل لإعادة الاستخدام في التلت جداول
+function TablePagination({
+  currentPage,
+  lastPage,
+  onPageChange,
+  disabled,
+}: {
+  currentPage: number;
+  lastPage: number;
+  onPageChange: (page: number) => void;
+  disabled?: boolean;
+}) {
+  if (!lastPage || lastPage <= 1) return null;
+
+  return (
+    <div className="flex items-center justify-between px-4 py-3 border-t border-gray-100">
+      <Button
+        variant="outline"
+        size="sm"
+        className="rounded-lg gap-1"
+        disabled={disabled || currentPage <= 1}
+        onClick={() => onPageChange(currentPage - 1)}
+      >
+        <ChevronRight className="size-4" />
+        السابق
+      </Button>
+
+      <span className="text-xs text-muted-foreground font-mono">
+        صفحة {currentPage} من {lastPage}
+      </span>
+
+      <Button
+        variant="outline"
+        size="sm"
+        className="rounded-lg gap-1"
+        disabled={disabled || currentPage >= lastPage}
+        onClick={() => onPageChange(currentPage + 1)}
+      >
+        التالي
+        <ChevronLeft className="size-4" />
+      </Button>
+    </div>
+  );
+}
 
 export default function TreasuryPage() {
   const router = useRouter();
   const { data: response, isLoading, isError, error } = useTreasury();
-  
+
   const [isWithdrawalModalOpen, setIsWithdrawalModalOpen] = useState(false);
   const [activeTable, setActiveTable] = useState<ActiveTableType>(null);
-  const [currentPage] = useState(1);
+
+  // صفحة مستقلة لكل جدول من التلاتة
+  const [withdrawalsPage, setWithdrawalsPage] = useState(1);
+  const [receivablesPage, setReceivablesPage] = useState(1);
+  const [stagesPage, setStagesPage] = useState(1);
 
   // جلب البيانات لكل جدول (لا يتم جلب البيانات إلا إذا تم النقر على الكارت الخاص به لتوفير الركويستات)
   const { data: withdrawalsResponse, isLoading: isWithdrawalsLoading } = useAdminWithdrawals(
-    currentPage, 
+    withdrawalsPage,
     activeTable === "withdrawals"
   );
 
   const { data: receivablesResponse, isLoading: isReceivablesLoading } = useReceivables(
+    receivablesPage,
     activeTable === "receivables"
   );
 
   const { data: stagesResponse, isLoading: isStagesLoading } = useStagesFinancials(
+    stagesPage,
     activeTable === "stages"
   );
 
@@ -73,11 +135,24 @@ export default function TreasuryPage() {
 
   const treasury = response.data;
   const withdrawalsList = withdrawalsResponse?.data?.data || [];
+  // ✅ receivables و stages بيرجعوا بشكل flat (current_page/last_page/data في نفس المستوى)
   const receivablesList = receivablesResponse?.data || [];
   const stagesList = stagesResponse?.data || [];
 
+  // بيانات الباجينيشن (current_page / last_page) لكل جدول
+  const withdrawalsMeta = withdrawalsResponse?.data;
+  const receivablesMeta = receivablesResponse;
+  const stagesMeta = stagesResponse;
+
   const toggleTable = (type: ActiveTableType) => {
-    setActiveTable((prev) => (prev === type ? null : type));
+    setActiveTable((prev) => {
+      const next = prev === type ? null : type;
+      // نرجّع الصفحة لأول واحدة كل ما نفتح جدول من جديد
+      if (next === "withdrawals") setWithdrawalsPage(1);
+      if (next === "receivables") setReceivablesPage(1);
+      if (next === "stages") setStagesPage(1);
+      return next;
+    });
   };
 
   const statsCards = [
@@ -264,6 +339,12 @@ export default function TreasuryPage() {
                 )}
               </TableBody>
             </Table>
+            <TablePagination
+              currentPage={withdrawalsMeta?.current_page || withdrawalsPage}
+              lastPage={withdrawalsMeta?.last_page || 1}
+              onPageChange={setWithdrawalsPage}
+              disabled={isWithdrawalsLoading}
+            />
           </CardContent>
         </Card>
       )}
@@ -320,6 +401,12 @@ export default function TreasuryPage() {
                 )}
               </TableBody>
             </Table>
+            <TablePagination
+              currentPage={receivablesMeta?.current_page || receivablesPage}
+              lastPage={receivablesMeta?.last_page || 1}
+              onPageChange={setReceivablesPage}
+              disabled={isReceivablesLoading}
+            />
           </CardContent>
         </Card>
       )}
@@ -372,6 +459,12 @@ export default function TreasuryPage() {
                 )}
               </TableBody>
             </Table>
+            <TablePagination
+              currentPage={stagesMeta?.current_page || stagesPage}
+              lastPage={stagesMeta?.last_page || 1}
+              onPageChange={setStagesPage}
+              disabled={isStagesLoading}
+            />
           </CardContent>
         </Card>
       )}
