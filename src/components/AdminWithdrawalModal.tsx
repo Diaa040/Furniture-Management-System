@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useQueryClient } from "@tanstack/react-query";
+import axios from "axios";
 import {
   Dialog,
   DialogContent,
@@ -40,7 +41,7 @@ export default function AdminWithdrawalModal({
 
     try {
       setIsSubmitting(true);
-      
+
       // إرسال البيانات للـ Endpoint المطلوبة
       await api.post("api/finance/admin-withdrawal", {
         amount: numericAmount,
@@ -53,9 +54,12 @@ export default function AdminWithdrawalModal({
       setAmount("");
       onClose();
       router.refresh();
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("خطأ أثناء سحب الإدارة:", error);
-      alert(error?.response?.data?.message || "حدث خطأ أثناء تنفيذ عملية السحب");
+      const message = axios.isAxiosError(error)
+        ? error.response?.data?.message || error.message
+        : "حدث خطأ أثناء تنفيذ عملية السحب";
+      alert(message);
     } finally {
       setIsSubmitting(false);
     }

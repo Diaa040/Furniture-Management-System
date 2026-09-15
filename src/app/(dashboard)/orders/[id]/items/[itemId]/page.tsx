@@ -2,7 +2,7 @@
 
 import { use, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { ArrowRight, AlertCircle, Loader2, Pencil, Plus, X } from "lucide-react";
+import { ArrowRight, Loader2, Pencil, Plus, X } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -18,6 +18,7 @@ import { RawMaterialsTable } from "@/components/orders/RawMaterialsTable";
 import { StageDetailsList } from "@/components/orders/StageDetailsList";
 import { AddPaymentDialog } from "@/components/orders/AddPaymentDialog";
 import { AddDetailDialog } from "@/components/orders/AddDetailDialog";
+import { AdditionsSection } from "@/components/orders/AdditionsSection";
 
 import { useItemStages } from "@/hooks/use-orders";
 import { useAddDetailForm } from "@/hooks/use-add-detail-form";
@@ -29,6 +30,7 @@ import {
   getActiveStageIndex,
   getCurrentCategoryId,
 } from "@/lib/stage-helpers";
+import { ADDITIONS_STAGE_NAME } from "@/lib/stage-constants";
 import type { ItemStagesResponse, OrderItemStage } from "@/types/order";
 
 export default function ItemDetailsPage({
@@ -74,6 +76,10 @@ export default function ItemDetailsPage({
   const allStages = buildAllStages(fetchedStages);
   const currentStage = allStages[activeStageIndex] || allStages[0];
   const currentCategoryId = getCurrentCategoryId(currentStage);
+
+  // ✅ تاب "الإضافات" بياخد بيانات من مصدر تاني خالص (endpoint منفصل)، مش
+  // جزء من نظام المراحل العادي (نجارة/دهان/تنجيد) - فبنتعرف عليه بالاسم هنا
+  const isAdditionsStage = currentStage.name === ADDITIONS_STAGE_NAME;
 
   // فورمات البنود والدفعات بقت جوّه هوكس منفصلة
   const detailForm = useAddDetailForm(orderId, itemId, currentStage.name);
@@ -177,9 +183,13 @@ export default function ItemDetailsPage({
         onChange={handleStageChange}
       />
 
-      <StageSummaryBanner stage={currentStage} />
+      {!isAdditionsStage && <StageSummaryBanner stage={currentStage} />}
 
-      {!currentStage.hasStarted ? (
+      {isAdditionsStage ? (
+        // ✅ تاب "الإضافات": مش بيمر على منطق hasStarted/StartStageForm العادي
+        // خالص، لأنه مش مرحلة بالمعنى التقليدي - بيانبني من endpoint منفصل
+        <AdditionsSection orderId={orderId} itemId={itemId} />
+      ) : !currentStage.hasStarted ? (
         showStartForm ? (
           <div className="space-y-4">
             <div className="flex justify-end">
@@ -202,23 +212,25 @@ export default function ItemDetailsPage({
             />
           </div>
         ) : (
+          // ✅ اتشال زرار "بدء مرحلة {name}" واتستبدل بنفس شكل زرار "+ إضافة
+          // جديدة" المستخدم في AdditionsSection (نفس الأيقونة والستايل)،
+          // بس لسه بيفتح نفس StartStageForm القديم - المنطق اللي وراه متغيرش
           <Card className="border-sidebar-border/40 shadow-sm rounded-2xl bg-white overflow-hidden p-8">
             <div className="flex flex-col items-center justify-center py-12 px-4 border border-dashed border-gray-300 rounded-2xl bg-[#FAF8F5]/50 text-center space-y-4">
               <div className="size-14 rounded-full bg-amber-50 flex items-center justify-center text-amber-600">
-                <AlertCircle className="size-8" />
+                <Plus className="size-8" />
               </div>
               <h3 className="text-xl font-black text-[#2C2420]">
-                المرحلة لم تبدأ بعد
+                لا توجد بيانات مسجلة لمرحلة {currentStage.name}
               </h3>
               <p className="text-sm text-gray-500 max-w-md font-bold">
-                لم يتم إدخال أي تفاصيل أو بدء العمل في مرحلة (
-                {currentStage.name}) حتى الآن.
+                لم يتم إدخال أي تفاصيل لهذه المرحلة حتى الآن.
               </p>
               <Button
                 onClick={() => setShowStartForm(true)}
                 className="bg-[#7C4A26] hover:bg-[#633a1e] text-white font-black rounded-xl px-6 py-5 shadow-sm gap-2 mt-2"
               >
-                <Plus className="size-5" /> بدء مرحلة {currentStage.name}
+                <Plus className="size-5" /> إضافة جديدة
               </Button>
             </div>
           </Card>

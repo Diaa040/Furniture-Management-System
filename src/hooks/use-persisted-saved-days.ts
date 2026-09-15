@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useState } from "react";
 
 export interface SavedDaysInfo {
   days: number;
@@ -37,22 +37,30 @@ export function usePersistedSavedDays(
   itemId: number,
   stageName: string,
 ) {
-  const [saved, setSavedState] = useState<SavedDaysInfo | null>(null);
+  const key = storageKey(orderId, itemId, stageName);
 
-  useEffect(() => {
+  // ✅ بدل useEffect: بنتتبع آخر key اتقرا بيه، ولو اتغير بنعمل setState
+  // جوه الـ render نفسه مباشرة - نفس الباترن المستخدم في usePersistedDailyInfo
+  const [trackedKey, setTrackedKey] = useState(key);
+  const [saved, setSavedState] = useState<SavedDaysInfo | null>(() =>
+    readSaved(orderId, itemId, stageName),
+  );
+
+  if (key !== trackedKey) {
+    setTrackedKey(key);
     setSavedState(readSaved(orderId, itemId, stageName));
-  }, [orderId, itemId, stageName]);
+  }
 
   const setSaved = useCallback(
     (info: SavedDaysInfo | null) => {
       setSavedState(info);
       if (typeof window === "undefined") return;
       try {
-        const key = storageKey(orderId, itemId, stageName);
+        const k = storageKey(orderId, itemId, stageName);
         if (info) {
-          window.localStorage.setItem(key, JSON.stringify(info));
+          window.localStorage.setItem(k, JSON.stringify(info));
         } else {
-          window.localStorage.removeItem(key);
+          window.localStorage.removeItem(k);
         }
       } catch {
         // تجاهل أخطاء الـ storage

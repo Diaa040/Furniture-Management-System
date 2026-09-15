@@ -1,5 +1,3 @@
-
-
 export interface Payment {
   id: number;
   order_id?: number;
@@ -94,7 +92,7 @@ export interface OrderDetails {
   payments: Payment[];
   created_at?: string;
   updated_at?: string;
-  
+
 }
 export interface OrderDetailsResponse {
   status: boolean;
@@ -138,7 +136,23 @@ export interface StagePaymentsResponse {
   remaining: number;
   payments: PaymentItem[];
 }
-export type OrderListItem = OrderItem;
+
+// ✅ اتصلحت - كانت معرّفة غلط كـ alias لـ OrderItem (قطعة أثاث مفردة داخل الأوردر)
+// بينما OrdersTable وباقي أماكن استخدامها محتاجين شكل "الأوردر نفسه" (نفس حقول OrderDetails تقريباً، من غير items/payments لأن قائمة الأوردرات مش بترجعهم عادة)
+export interface OrderListItem {
+  id: number;
+  customer_name: string;
+  customer_phone: string;
+  status: "pending" | "processing" | "delivered" | "cancelled" | string;
+  total_price: number;
+  deposit_amount: number;
+  remaining_amount: number;
+  notes?: string;
+  order_date?: string;
+  delivery_date?: string;
+  created_at?: string;
+  updated_at?: string;
+}
 
 
 export interface TAddItem{
@@ -164,6 +178,17 @@ export interface EditStagePayload {
   agreed_cost: number;
 }
 
+// ✅ أضيفت - كانت مستخدمة في startStageService (order.ts) لكن مش معرّفة، وده كان بيسبب type error
+// نفس شكل الـ payload المستخدم في ordersApi.setStageDetails لأن الاتنين بيضربوا على نفس الـ endpoint
+export interface StartStagePayload {
+  stage_name: string;
+  execution_type: "internal" | "external";
+  agreed_cost: number;
+  worker_note?: string;
+  notes?: string;
+  details?: { items: Array<{ name: string; cost: number }> };
+}
+
 export interface EditStageInitialData {
   executionType: string | null;
   workshopName: string;
@@ -175,7 +200,7 @@ export interface Worker {
   name: string;
   daily_wage: string;
   created_at: string | null;
-  updated_at: string;
+  updated_at: string | null; // ✅ اتعدلت لـ string | null عشان تتطابق مع IWorker في @/types/workers.ts
   payment: string;
 }
 

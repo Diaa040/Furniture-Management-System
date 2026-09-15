@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import type { DayTransactionItem } from "@/types/transactions";
 import { useUpdateTransaction } from "@/hooks/use-day-details";
 
@@ -11,37 +11,45 @@ interface EditTransactionModalProps {
 }
 
 export function EditTransactionModal({ isOpen, onClose, transaction }: EditTransactionModalProps) {
-  const [name, setName] = useState("");
+  if (!isOpen || !transaction) return null;
+
+  // ✅ الـ key بتخلي React يعمل remount للفورم مع كل transaction مختلف،
+  // فالـ state بتاعته بيتصفّر ويتملى من القيم الجديدة تلقائياً من غير useEffect + setState
+  return (
+    <EditTransactionForm
+      key={transaction.id}
+      transaction={transaction}
+      onClose={onClose}
+    />
+  );
+}
+
+interface EditTransactionFormProps {
+  transaction: DayTransactionItem;
+  onClose: () => void;
+}
+
+function EditTransactionForm({ transaction, onClose }: EditTransactionFormProps) {
+  const [name, setName] = useState(transaction.name);
   // جعلنا السعر يقبل النص الفارغ "" لكي لا يظهر الصفر الافتراضي المزعج
-  const [amount, setAmount] = useState<number | "">("");
-  const [type, setType] = useState<"in" | "out">("out");
+  const [amount, setAmount] = useState<number | "">(Number(transaction.amount));
+  const [type, setType] = useState<"in" | "out">(transaction.type);
 
   const updateMutation = useUpdateTransaction();
 
-  // تعبئة البيانات القديمة أول ما يفتح المودال للعنصر المختار
-  useEffect(() => {
-    if (transaction) {
-      setName(transaction.name);
-      setAmount(Number(transaction.amount));
-      setType(transaction.type);
-    }
-  }, [transaction]);
-
-  if (!isOpen || !transaction) return null;
-
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     // التأكد من أن المبلغ تم إدخاله قبل الإرسال
     if (amount === "") return;
 
     updateMutation.mutate(
       {
         id: transaction.id,
-        payload: { 
-          name, 
-          amount: Number(amount), 
-          type 
+        payload: {
+          name,
+          amount: Number(amount),
+          type,
         },
       },
       {

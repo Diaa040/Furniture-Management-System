@@ -28,3 +28,18 @@ export interface MonthlyReportResponse {
   count: number;
   data: ProfitTransaction[];
 }
+
+// ✅ أضيفت - كانت مستخدمة في ProductDetailsDialog لكن مش معرّفة، وده كان بيسبب type error
+// الحقول اتحددت بناءً على الاستخدام الفعلي في الكومبوننت وملف بيانات المنتجات (mock data)
+export interface Product {
+  id: number;
+  name: string;
+  category: string;
+  price: number;
+  stock: number;
+  status: "available" | "low" | "out";
+  description?: string;
+  image?: string; // اختياري - الفورم الحالي مش بيجمعه من المستخدم
+  createdAt: string;
+  updatedAt: string;
+}

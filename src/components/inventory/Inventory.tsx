@@ -8,6 +8,7 @@ import {
   DeleteInventoryPayment,
   DisplayInventoryPayment,
 } from "@/apis/inventory.api";
+import { api } from "@/lib/api";
 import axios from "axios";
 
 interface InventoryProps {
@@ -56,6 +57,14 @@ export default function Inventory({ data, categoryId }: InventoryProps) {
     number | null
   >(null);
 
+  // --- حالات خاصة بمودال "استرجاع للمخزن" ---
+  const [isReturnModalOpen, setIsReturnModalOpen] = useState(false);
+  const [returnMaterialId, setReturnMaterialId] = useState<number | null>(
+    null,
+  );
+  const [returnMaterialName, setReturnMaterialName] = useState<string>("");
+  const [returnQuantity, setReturnQuantity] = useState("");
+
   // دالة فتح بوب اب عرض الدفعات وجلب البيانات مباشرة
   const openPaymentsModal = async (
     rawMaterialId: number,
@@ -70,7 +79,7 @@ export default function Inventory({ data, categoryId }: InventoryProps) {
 
     try {
       const paymentsData = await DisplayInventoryPayment(
-        categoryId,
+        Number(categoryId),
         rawMaterialId,
       );
       console.log("البيانات القادمة من الـ API:", paymentsData);
@@ -97,7 +106,7 @@ export default function Inventory({ data, categoryId }: InventoryProps) {
       raw_material_id: number;
       quantity: number;
       unit_price: number;
-    }) => AddInventoryPayment(categoryId, paymentData),
+    }) => AddInventoryPayment(Number(categoryId), paymentData),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["inventory", categoryId] });
       closeModal();
@@ -184,12 +193,60 @@ export default function Inventory({ data, categoryId }: InventoryProps) {
     setPaymentIdPendingDelete(null);
   };
 
+  // ✅ mutation استرجاع كمية للمخزن - POST /api/raw-materials/{rawMaterialId}/return
+  const returnMaterialMutation = useMutation({
+    mutationFn: (payload: { rawMaterialId: number; quantity: number }) =>
+      api.post(`/api/raw-materials/${payload.rawMaterialId}/return`, {
+        quantity: payload.quantity,
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["inventory", categoryId] });
+      closeReturnModal();
+    },
+    onError: (error: unknown) => {
+      console.error("خطأ أثناء استرجاع الكمية للمخزن:", error);
+    },
+  });
+
+  // فتح مودال استرجاع للمخزن
+  const openReturnModal = (rawMaterialId: number, rawMaterialName: string) => {
+    setReturnMaterialId(rawMaterialId);
+    setReturnMaterialName(rawMaterialName);
+    setIsReturnModalOpen(true);
+  };
+
+  // غلق مودال استرجاع للمخزن
+  const closeReturnModal = () => {
+    setIsReturnModalOpen(false);
+    setReturnMaterialId(null);
+    setReturnMaterialName("");
+    setReturnQuantity("");
+    returnMaterialMutation.reset();
+  };
+
+  const handleSubmitReturn = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!returnMaterialId || !returnQuantity) return;
+
+    returnMaterialMutation.mutate({
+      rawMaterialId: returnMaterialId,
+      quantity: Number(returnQuantity),
+    });
+  };
+
   const addPaymentErrorMessage = addPaymentMutation.isError
     ? extractErrorMessage(addPaymentMutation.error, "حدث خطأ أثناء إضافة الدفعة")
     : "";
 
   const deletePaymentErrorMessage = deletePaymentMutation.isError
     ? extractErrorMessage(deletePaymentMutation.error, "حدث خطأ أثناء حذف الدفعة")
+    : "";
+
+  const returnErrorMessage = returnMaterialMutation.isError
+    ? extractErrorMessage(
+        returnMaterialMutation.error,
+        "حدث خطأ أثناء استرجاع الكمية للمخزن",
+      )
     : "";
 
   return (
@@ -211,6 +268,7 @@ export default function Inventory({ data, categoryId }: InventoryProps) {
               <th className="py-3 px-6 font-medium">الحالة</th>
               <th className="py-3 px-6 font-medium">دفعات الشراء</th>
               <th className="py-3 px-6 font-medium">اضافة دفعة</th>
+              <th className="py-3 px-6 font-medium">استرجاع للمخزن</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-100 text-sm">
@@ -254,6 +312,14 @@ export default function Inventory({ data, categoryId }: InventoryProps) {
                       className="inline-flex items-center gap-2 px-4 py-1.5 border border-blue-200 rounded-lg text-xs font-medium text-blue-600 bg-blue-50 hover:bg-blue-100 transition"
                     >
                       اضافه دفعة
+                    </button>
+                  </td>
+                  <td className="py-4 px-6">
+                    <button
+                      onClick={() => openReturnModal(item.id, item.name)}
+                      className="inline-flex items-center gap-2 px-4 py-1.5 border border-amber-200 rounded-lg text-xs font-medium text-amber-700 bg-amber-50 hover:bg-amber-100 transition"
+                    >
+                      استرجاع للمخزن
                     </button>
                   </td>
                 </tr>
@@ -405,7 +471,7 @@ export default function Inventory({ data, categoryId }: InventoryProps) {
                           </td>
                           <td className="py-3 px-4 text-center">
                             <button
-                              onClick={() => handleDeletePayment(payment.id)}
+                              onClick={() => handleDeletePayment(Number(payment.id))}
                               disabled={deletePaymentMutation.isPending}
                               className="px-3 py-1 bg-red-50 text-red-600 hover:bg-red-100 rounded-lg text-xs font-medium transition disabled:opacity-50"
                             >
@@ -434,9 +500,63 @@ export default function Inventory({ data, categoryId }: InventoryProps) {
         </div>
       )}
 
+      {/* --- Modal استرجاع كمية للمخزن --- */}
+      {isReturnModalOpen && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl p-6 w-full max-w-md shadow-lg">
+            <h3 className="text-lg font-bold text-gray-800 mb-4">
+              استرجاع كمية للمخزن - {returnMaterialName}
+            </h3>
+
+            <form onSubmit={handleSubmitReturn} className="space-y-4">
+              <div>
+                <label className="block text-xs font-medium text-gray-600 mb-1">
+                  الكمية المسترجعة (Quantity)
+                </label>
+                <input
+                  type="number"
+                  step="any"
+                  min="0.01"
+                  value={returnQuantity}
+                  onChange={(e) => setReturnQuantity(e.target.value)}
+                  placeholder="أدخل الكمية"
+                  required
+                  className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-amber-500"
+                />
+              </div>
+
+              {returnErrorMessage && (
+                <div className="rounded-lg bg-red-50 border border-red-200 text-red-600 text-xs font-semibold px-3 py-2.5">
+                  {returnErrorMessage}
+                </div>
+              )}
+
+              <div className="flex justify-end gap-2 mt-6">
+                <button
+                  type="button"
+                  onClick={closeReturnModal}
+                  className="px-4 py-2 text-xs font-medium text-gray-600 bg-gray-100 rounded-lg hover:bg-gray-200 transition"
+                >
+                  إلغاء
+                </button>
+                <button
+                  type="submit"
+                  disabled={returnMaterialMutation.isPending}
+                  className="px-4 py-2 text-xs font-medium text-white bg-amber-600 rounded-lg hover:bg-amber-700 transition disabled:opacity-50"
+                >
+                  {returnMaterialMutation.isPending
+                    ? "جاري الاسترجاع..."
+                    : "تأكيد الاسترجاع"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
       {/* --- مودال تأكيد حذف دفعة (بديل الـ confirm) --- */}
       {paymentIdPendingDelete !== null && (
-        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-[60] p-4">
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-60 p-4">
           <div className="bg-white rounded-2xl p-6 w-full max-w-sm shadow-xl text-center">
             <h3 className="text-base font-bold text-gray-800 mb-2">
               تأكيد حذف الدفعة

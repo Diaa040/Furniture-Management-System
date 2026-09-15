@@ -1,5 +1,3 @@
-
-
 "use client";
 
 import { useState } from "react";
@@ -46,7 +44,10 @@ export function DispenseMaterialModal({
   const [quantity, setQuantity] = useState<string>("");
 //   const { withdrawMaterial, isSubmitting, errorMessage } = useWithdrawMaterial();
 
-  const { data: categoryData, isLoading: isLoadingMaterials } = useRawMaterialsByCategory(categoryId);
+  // ✅ اتبعت isOpen كباراميتر تاني عشان الهوك ميجيبش البيانات إلا لما المودال
+  // يتفتح فعلاً - ده اللي كان بيسبب طلب لـ categoryId مش حقيقي (زي إضافات)
+  // بمجرد تحميل الصفحة حتى لو المودال مقفول
+  const { data: categoryData, isLoading: isLoadingMaterials } = useRawMaterialsByCategory(categoryId, isOpen);
   const dispenseMutation = useDispenseMaterial(orderId, itemId);
 
   const materialsList: RawMaterial[] = categoryData?.raw_materials || [];
@@ -74,7 +75,7 @@ export function DispenseMaterialModal({
   };
 
 
-  
+
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
@@ -88,7 +89,7 @@ export function DispenseMaterialModal({
         <form onSubmit={handleSubmit} className="space-y-4 mt-2">
           <div className="space-y-2 text-right">
             <Label className="text-sm font-bold text-[#2C2420]">اختر الخامة *</Label>
-            
+
             <div className="grid grid-cols-1 gap-2 max-h-48 overflow-y-auto p-1 border rounded-xl border-gray-100 bg-gray-50/50">
               {isLoadingMaterials ? (
                 <div className="flex justify-center py-4">
@@ -117,7 +118,7 @@ export function DispenseMaterialModal({
                         </div>
                         <span className="text-sm">{mat.name}</span>
                       </div>
-                      
+
                       {mat.unit_price && (
                         <span className="text-xs text-gray-500 font-normal">
                           {mat.unit_price} ج.م

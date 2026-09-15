@@ -47,6 +47,35 @@ export function useStagePayments(
   });
 }
 
+// ✅ جديدة - تعديل دفعة موجودة جوه مرحلة معينة، وبتعمل invalidate لنفس queryKey بتاع useStagePayments
+// عشان القائمة تتحدث تلقائياً بعد نجاح التعديل
+export function useUpdateStagePayment(
+  orderId: number,
+  itemId: number,
+  stageName: string
+) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({
+      paymentId,
+      amount,
+    }: {
+      paymentId: number | string;
+      amount: number;
+    }) =>
+      ordersApi.updateStagePayment(orderId, itemId, paymentId, {
+        stage_name: stageName,
+        amount,
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: ['stage-payments', orderId, itemId, stageName],
+      });
+    },
+  });
+}
+
 export const useAddPayment = () => {
   const queryClient = useQueryClient();
 
@@ -82,7 +111,7 @@ export async function getItemStages(
   if (!orderId || !itemId) {
     throw new Error('Order ID and Item ID are required');
   }
-  
+
   const response = await ordersApi.getItemStages(orderId, itemId, stageName);
   return response;
 }
@@ -99,7 +128,7 @@ export function useOrderDetails(orderId: number | null) {
     queryKey: ['order-details', orderId],
     queryFn: async () => {
       if (!orderId) throw new Error('Invalid order ID');
-      
+
       const response = await ordersApi.getOrderDetails(orderId);
 
       if (response && typeof response === 'object' && 'data' in response) {
@@ -163,7 +192,7 @@ export function useUpdateOrderItem(orderId: number) {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ itemId, data }: { itemId: number; data: Partial<TUpdateItemPayload> }) => 
+    mutationFn: ({ itemId, data }: { itemId: number; data: Partial<TUpdateItemPayload> }) =>
       updateOrderItem(itemId, data),
     onSuccess: () => {
       // إعادة جلب تفاصيل الأوردر لتحديث العناصر والأسعار فوراً

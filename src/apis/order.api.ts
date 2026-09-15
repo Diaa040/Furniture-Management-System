@@ -121,6 +121,22 @@ export const ordersApi = {
     return response.data;
   },
 
+  // 9️⃣ تعديل دفعة موجودة جوه مرحلة معينة
+  // ⚠️ المسار ده من غير "/api" في الأول، بعكس باقي endpoints الدفعات في الملف ده (زي getStagePayments فوق)
+  // ده مطابق للمسار اللي بعتهولي بالظبط، بس يستاهل تتأكد إنه مقصود ومش سهو
+  updateStagePayment: async (
+    orderId: number | string,
+    itemId: number | string,
+    paymentId: number | string,
+    payload: { stage_name: string; amount: number }
+  ) => {
+    const response = await api.put(
+      `/api/orders/${orderId}/items/${itemId}/payments/${paymentId}/update`,
+      payload
+    );
+    return response.data;
+  },
+
 };
 
 export async function AddItem(orderId: string | number, data: TAddItem): Promise<TAddItem> {
@@ -175,6 +191,6 @@ export const stageApi = {
 
 // ⚠️ تم تعديلها لتستخدم "api" بدلاً من "fetch" العادي، عشان يترفق التوكين تلقائياً
 export async function getOrderWorkers(): Promise<WorkersResponse> {
-  const response = await api.get<WorkersResponse>("/api/get-worker");
+  const response = await api.get<WorkersResponse>("/get-worker");
   return response.data;
 }

@@ -25,7 +25,7 @@ export function useWithdrawMaterial() {
 
     try {
       const response = await api.post('/api/withdrawals/item', payload);
-      
+
       console.log('تم الصرف بنجاح:', response.data);
 
       if (onSuccess) {
@@ -59,25 +59,34 @@ export interface DispenseMaterialPayload {
   order_item_id: number;
   stage_name: string;
 }
-export function useRawMaterialsByCategory(categoryId: number | null) {
+
+// ✅ اتضاف باراميتر "enabled" (افتراضيًا true عشان أي استخدام قديم للهوك من
+// غيره يفضل شغال زي الأول). المشكلة كانت إن الهوك كان بيجيب البيانات بمجرد ما
+// categoryId يبقى رقم حقيقي، حتى لو المودال (DispenseMaterialModal) لسه مقفول
+// - فكان بيبعت طلب من غير داعي في كل مرة الصفحة تتحمّل. دلوقتي البيانات بتتجاب
+// بس لما المودال يبقى فاتح فعلاً.
+export function useRawMaterialsByCategory(
+  categoryId: number | null,
+  enabled: boolean = true
+) {
   return useQuery({
     queryKey: ["raw-materials-by-category", categoryId],
     queryFn: async () => {
       if (!categoryId) return null;
-      
+
       // 🔎 أطبع هنا عشان تشوف هل فعلاً الـ categoryId جاي بـ 78 ولا رقم فئة؟
       console.log("Fetching raw materials for categoryId:", categoryId);
-      
+
       const res = await fetch(`${API_BASE_URL}/inventory/rawmaterials/${categoryId}`, {
         headers: { Accept: "application/json" },
       });
-      
+
       if (!res.ok) throw new Error("فشل في جلب خامات هذه المرحلة");
-      
+
       const json = await res.json();
       return json.data !== undefined ? json.data : json;
     },
-    enabled: !!categoryId,
+    enabled: !!categoryId && enabled,
   });
 }
 // Mutation لطلب صرف الخامة عبر Endpoint الجديد

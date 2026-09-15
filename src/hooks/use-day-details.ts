@@ -25,10 +25,19 @@ export function useDayDetails() {
   });
 }
 
-export function useDayTransactionsDetails(day: number, month: number, year: number) {
+export function useDayTransactionsDetails(
+  day: number,
+  month: number,
+  year: number,
+  options?: { enabled?: boolean }
+) {
+  // ✅ اتضاف options.enabled عشان نقدر نمنع الـ request لحد ما المستخدم يختار تاريخ فعلاً،
+  // مش بس نعتمد على إن القيم الافتراضية (تاريخ النهارده) صحيحة رقمياً
+  const isEnabled = (options?.enabled ?? true) && !!day && !!month && !!year;
+
   return useQuery<DayTransactionsDetailsResponse>({
     queryKey: ["day-transactions-details", year, month, day],
     queryFn: () => fetchDayTransactionsDetails({ day, month, year }),
-    enabled: !!day && !!month && !!year,
+    enabled: isEnabled,
   });
 }

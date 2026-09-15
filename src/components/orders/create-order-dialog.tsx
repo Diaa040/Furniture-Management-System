@@ -74,9 +74,17 @@ export function CreateOrderDialog({
       return;
     }
 
+    // ✅ total_price مطلوب في CreateOrderPayload لكن مفيش حقل إدخال ليه في الفورم،
+    // فبنحسبه تلقائياً كمجموع أسعار كل العناصر المضافة
+    const totalPrice = items.reduce(
+      (sum, item) => sum + (Number(item.price) || 0),
+      0
+    );
+
     const payload: CreateOrderPayload = {
       customer_name: customerName,
       customer_phone: customerPhone,
+      total_price: totalPrice,
       delivery_date: deliveryDate,
       deposit_amount: Number(depositAmount) || 0,
       notes,
@@ -97,6 +105,12 @@ export function CreateOrderDialog({
       alert("حدث خطأ أثناء حفظ الأوردر، برجاء المحاولة لاحقاً");
     }
   };
+
+  // مجموع أسعار العناصر الحالية، بيتحدث لحظياً مع كتابة المستخدم (نفس القيمة اللي هتتبعت كـ total_price)
+  const totalPricePreview = items.reduce(
+    (sum, item) => sum + (Number(item.price) || 0),
+    0
+  );
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
@@ -226,6 +240,14 @@ export function CreateOrderDialog({
                 )}
               </div>
             ))}
+
+            {/* إجمالي أسعار العناصر - بيتحسب تلقائياً وهو نفس القيمة اللي بتتبعت كـ total_price */}
+            <div className="flex items-center justify-end gap-2 text-sm font-bold text-[#2C2420] pt-1">
+              <span className="text-xs font-semibold text-muted-foreground">
+                إجمالي سعر الأوردر:
+              </span>
+              <span>{totalPricePreview.toLocaleString()} ج.م</span>
+            </div>
           </div>
 
           <div className="flex items-center justify-end gap-3 pt-4 border-t border-border">

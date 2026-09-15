@@ -12,3 +12,9 @@ export interface HandlerMaterialsResponse {
   message: string;
   data: HandlerMaterialsItem[];
 }
+export interface Sale {
+  id: number;
+  invoiceNumber: string;
+  customerName: string;
+  total: number;
+}

@@ -9,7 +9,8 @@ export interface IWorker {
 
 export interface WorkersResponse {
   status: boolean;
-  data: Worker[];
+  data: IWorker[]; // ✅ اتصلحت - كانت بتشاور على "Worker" غير معرّف في الملف ده،
+  // فـ TypeScript كان بياخد الـ Worker العالمي بتاع DOM (Web Workers API) بدل موظفينك فعلياً
 }
 
 export interface WorkerOrderItem {

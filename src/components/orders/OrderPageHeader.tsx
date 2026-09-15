@@ -38,7 +38,7 @@ export default function OrderPageHeader({ orderId, customerName, customerPhone, 
             <span>‹</span>
             <span>#{orderId}</span>
           </div>
-          <h1 className="text-2xl font-extrabold text-[#2C2420]">أوردر #{orderId}</h1>
+          <h1 className="text-2xl font-extrabold text-[#2C2420]">{customerName}</h1>
           <p className="text-xs text-muted-foreground mt-0.5">{customerName} - {customerPhone}</p>
         </div>
       </div>

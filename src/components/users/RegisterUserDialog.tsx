@@ -51,6 +51,12 @@ export function RegisterUserDialog({ onRegistered }: RegisterUserDialogProps) {
     if (!open) reset();
   };
 
+  // ✅ setRole بتستقبل string بس، لكن onValueChange بتاعة Select ممكن تبعت null،
+  // فبنلف هنا وبنمررلها القيمة بس لو مش null
+  const handleRoleChange = (value: string | null) => {
+    if (value !== null) setRole(value);
+  };
+
   return (
     <>
       <Button
@@ -134,7 +140,7 @@ export function RegisterUserDialog({ onRegistered }: RegisterUserDialogProps) {
               <Label className="text-xs md:text-sm font-black text-foreground">
                 الدور (Role)
               </Label>
-              <Select value={formData.role} onValueChange={setRole}>
+              <Select value={formData.role} onValueChange={handleRoleChange}>
                 <SelectTrigger className="rounded-xl border-border h-11 text-sm md:text-base font-bold px-3.5 w-full">
                   <SelectValue placeholder="اختر الدور" />
                 </SelectTrigger>

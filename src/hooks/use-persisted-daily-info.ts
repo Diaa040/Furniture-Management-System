@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useState } from "react";
 
 export interface DailyInfo {
   workerName: string;
@@ -35,24 +35,32 @@ export function usePersistedDailyInfo(
   itemId: number,
   stageName: string,
 ) {
-  const [dailyInfo, setDailyInfoState] = useState<DailyInfo | null>(null);
+  const key = storageKey(orderId, itemId, stageName);
 
-  // كل ما المرحلة (الاسم) تتغيّر، اقرأ القيمة المحفوظة ليها من localStorage.
-  // ده بيغطي حالة الـ refresh وحالة تبديل التابات بين المراحل.
-  useEffect(() => {
+  // ✅ بدل useEffect: بنتتبع آخر key اتقرا بيه، ولو اتغير (تبديل مرحلة/عنصر)
+  // بنعمل setState جوه الـ render نفسه مباشرة - ده الباترن الرسمي من React
+  // لتحديث state بناءً على تغيّر قيمة مشتقة، وميعتبرش "calling setState in an effect"
+  // لأنه أصلاً مش جوه effect: https://react.dev/reference/react/useState#storing-information-from-previous-renders
+  const [trackedKey, setTrackedKey] = useState(key);
+  const [dailyInfo, setDailyInfoState] = useState<DailyInfo | null>(() =>
+    readDailyInfo(orderId, itemId, stageName),
+  );
+
+  if (key !== trackedKey) {
+    setTrackedKey(key);
     setDailyInfoState(readDailyInfo(orderId, itemId, stageName));
-  }, [orderId, itemId, stageName]);
+  }
 
   const setDailyInfo = useCallback(
     (info: DailyInfo | null) => {
       setDailyInfoState(info);
       if (typeof window === "undefined") return;
       try {
-        const key = storageKey(orderId, itemId, stageName);
+        const k = storageKey(orderId, itemId, stageName);
         if (info) {
-          window.localStorage.setItem(key, JSON.stringify(info));
+          window.localStorage.setItem(k, JSON.stringify(info));
         } else {
-          window.localStorage.removeItem(key);
+          window.localStorage.removeItem(k);
         }
       } catch {
         // تجاهل أخطاء الـ storage (زي الوضع الخاص / التخزين ممتلئ)

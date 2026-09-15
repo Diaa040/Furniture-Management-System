@@ -1,7 +1,6 @@
 "use client";
 
 import {  LogOut } from "lucide-react";
-import { ThemeToggle } from "@/components/theme-toggle";
 import { useRouter } from "next/navigation";
 import { logout } from "@/lib/auth";
 

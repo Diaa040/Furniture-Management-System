@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { TUpdateItemPayload } from "@/types/order";
 import { OrderItem } from "@/types/order"; // أو النوع الخاص بالعنصر لديك
 
@@ -19,43 +19,71 @@ export default function EditOrderItemModal({
   isPending,
   item,
 }: EditOrderItemModalProps) {
-  const [formData, setFormData] = useState<Partial<TUpdateItemPayload>>({
-    name: "",
-    price: "",
-    status: "pending",
-    notes: "",
+  if (!isOpen || !item) return null;
+
+  // ✅ الـ key بتخلي React يعمل remount للفورم مع كل item مختلف،
+  // فالـ state بتاعته بيتصفّر ويتملى من القيم الجديدة تلقائياً من غير useEffect + setState
+  return (
+    <EditOrderItemForm
+      key={item.id}
+      item={item}
+      onClose={onClose}
+      onSubmit={onSubmit}
+      isPending={isPending}
+    />
+  );
+}
+
+interface EditOrderItemFormProps {
+  item: OrderItem;
+  onClose: () => void;
+  onSubmit: (data: Partial<TUpdateItemPayload>) => void;
+  isPending: boolean;
+}
+
+// ✅ state محلي للفورم بيسمح بـ "" للسعر (عشان input فاضي)، مختلف عن TUpdateItemPayload
+// اللي بيتطلب number | undefined بس - التحويل بيحصل وقت الإرسال في handleSubmit
+interface EditItemFormData {
+  name: string;
+  price: number | "";
+  status: TUpdateItemPayload["status"];
+  notes: string;
+}
+
+function EditOrderItemForm({
+  item,
+  onClose,
+  onSubmit,
+  isPending,
+}: EditOrderItemFormProps) {
+  const [formData, setFormData] = useState<EditItemFormData>({
+    name: item.name || "",
+    price: item.price ?? "",
+    status: (item.status as TUpdateItemPayload["status"]) || "pending",
+    notes: item.notes || "",
   });
-
-  // تعبئة البيانات القديمة للعنصر عند فتح المودال
-  useEffect(() => {
-    if (item && isOpen) {
-      setFormData({
-        name: item.name || "",
-        price: item.price ?? "",
-        status: item.status || "pending",
-        notes: item.notes || "",
-      });
-    }
-  }, [item, isOpen]);
-
-  if (!isOpen) return null;
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    onSubmit(formData);
+    onSubmit({
+      name: formData.name,
+      price: formData.price === "" ? undefined : formData.price,
+      status: formData.status,
+      notes: formData.notes,
+    });
   };
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
       <div className="bg-white rounded-2xl p-6 w-full max-w-md shadow-lg text-right" dir="rtl">
         <h3 className="text-lg font-bold text-gray-900 mb-4">تعديل العنصر</h3>
-        
+
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label className="block text-xs font-medium text-gray-700 mb-1">اسم العنصر</label>
             <input
               type="text"
-              value={formData.name || ""}
+              value={formData.name}
               onChange={(e) => setFormData({ ...formData, name: e.target.value })}
               className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
             />
@@ -97,7 +125,7 @@ export default function EditOrderItemModal({
           <div>
             <label className="block text-xs font-medium text-gray-700 mb-1">الملاحظات</label>
             <textarea
-              value={formData.notes || ""}
+              value={formData.notes}
               onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
               className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
               rows={3}

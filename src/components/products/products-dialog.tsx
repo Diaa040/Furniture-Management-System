@@ -3,7 +3,9 @@
 import { useState } from "react";
 import { X } from "lucide-react";
 import type { Product } from "@/types/profits";
-import { createProduct, updateProduct } from "@/apis/profits.api";
+import { updateProduct } from '@/apis/profits.api';
+import { createProduct } from '@/apis/profits.api';
+
 
 interface ProductDialogProps {
   open: boolean;

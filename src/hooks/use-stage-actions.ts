@@ -3,7 +3,6 @@
 import { api } from "@/lib/api";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 
 interface AddDetailParams {
   orderId: number;

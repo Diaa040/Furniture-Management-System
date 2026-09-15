@@ -27,7 +27,12 @@ export default function CraftsmanDailyFields({
   isLoadingWorkers,
   dailyRate,
 }: CraftsmanDailyFieldsProps) {
-  const handleChange = (id: string) => {
+  // ✅ بقت بتقبل string | null عشان تطابق توقيع onValueChange بتاع Select
+  const handleChange = (id: string | null) => {
+    if (id === null) {
+      onCraftsmanSelect(undefined);
+      return;
+    }
     const worker = workers.find((w) => String(w.id) === id);
     onCraftsmanSelect(worker);
   };

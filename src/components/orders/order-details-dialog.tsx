@@ -2,7 +2,6 @@
 
 import { useState } from 'react';
 import { useOrderDetails, useAddCustomerPayment } from '@/hooks/use-orders';
-import { ItemStagesDialog } from './item-stages-dialog';
 import { OrderDetails, Payment, OrderItem } from '@/types/order';
 
 interface OrderDetailsDialogProps {
@@ -18,9 +17,6 @@ export function OrderDetailsDialog({ orderId, isOpen, onClose }: OrderDetailsDia
   const [paymentAmount, setPaymentAmount] = useState('');
   const [paymentNotes, setPaymentNotes] = useState('');
   const [showPaymentForm, setShowPaymentForm] = useState(false);
-
-  const [selectedItemId, setSelectedItemId] = useState<number | null>(null);
-  const [isStagesOpen, setIsStagesOpen] = useState(false);
 
   if (!isOpen || !orderId) return null;
 
@@ -50,11 +46,6 @@ export function OrderDetailsDialog({ orderId, isOpen, onClose }: OrderDetailsDia
     } catch (err) {
       console.error('فشل تحصيل الدفعة:', err);
     }
-  };
-
-  const handleOpenStages = (itemId: number) => {
-    setSelectedItemId(itemId);
-    setIsStagesOpen(true);
   };
 
   return (
@@ -171,12 +162,6 @@ export function OrderDetailsDialog({ orderId, isOpen, onClose }: OrderDetailsDia
                           <div className="flex items-center gap-3">
                             <span className="font-bold text-sm">{Number(item.price).toLocaleString()} ج.م</span>
                             
-                            <button
-                              onClick={() => handleOpenStages(item.id)}
-                              className="text-xs bg-indigo-600 text-white px-3 py-1.5 rounded hover:bg-indigo-700 transition"
-                            >
-                              مراحل التصنيع ⚙️
-                            </button>
                           </div>
                         </div>
                       ))
@@ -197,15 +182,6 @@ export function OrderDetailsDialog({ orderId, isOpen, onClose }: OrderDetailsDia
         </div>
       </div>
 
-      <ItemStagesDialog
-        orderId={orderId}
-        itemId={selectedItemId}
-        isOpen={isStagesOpen}
-        onClose={() => {
-          setIsStagesOpen(false);
-          setSelectedItemId(null);
-        }}
-      />
     </>
   );
 }
