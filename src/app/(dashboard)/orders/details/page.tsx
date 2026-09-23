@@ -1,7 +1,7 @@
 "use client";
 
-import { use, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import {
   useOrderDetails,
   useAddOrderCustomerPayment,
@@ -23,9 +23,13 @@ import CostProfitCard from "@/components/orders/CostProfitCard";
 import AddOrderPaymentModal from "@/components/orders/AddOrderPaymentModal";
 import { extractTotalStagesCost, getOrderFinancials } from "@/lib/order-financials";
 
-export default function OrderDetailsPage({ params }: { params: Promise<{ id: string }> }) {
-  const { id: orderId } = use(params);
+export default function OrderDetailsPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+
+  // ✅ بدل ما نجيب orderId من params الديناميكية ([id])، بنجيبه من الـ
+  // query string (?id=...) عشان يشتغل مع static export
+  const orderId = searchParams.get("id") ?? "";
 
   const { data: responseData, isLoading, isError, error } = useOrderDetails(Number(orderId));
   const { data: stagesCostData } = useOrderStagesCost(orderId);

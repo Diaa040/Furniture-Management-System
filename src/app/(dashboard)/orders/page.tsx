@@ -1,20 +1,20 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { Plus } from 'lucide-react';
-import { OrdersTable } from '@/components/orders/orders-table';
-import { CreateOrderDialog } from '@/components/orders/create-order-dialog';
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { Plus } from "lucide-react";
+import { OrdersTable } from "@/components/orders/orders-table";
+import { CreateOrderDialog } from "@/components/orders/create-order-dialog";
 
 export default function OrdersPage() {
   const router = useRouter();
-  
+
   // State التحكم في فتح نافذة إنشاء أوردر جديد
   const [isCreateOpen, setIsCreateOpen] = useState(false);
 
-  // التوجيه لصفحة التفاصيل الجديدة مباشرة
+  // التوجيه لصفحة التفاصيل الجديدة (route ثابت + query param بدل [id])
   const handleSelectOrder = (id: number) => {
-    router.push(`/orders/${id}`);
+    router.push(`/orders/details?id=${id}`);
   };
 
   return (
@@ -27,7 +27,7 @@ export default function OrdersPage() {
             عرض متابعة الطلبات والمدفوعات والمراحل التصنيعية
           </p>
         </div>
-        
+
         {/* زر إنشاء أوردر جديد */}
         <button
           onClick={() => setIsCreateOpen(true)}

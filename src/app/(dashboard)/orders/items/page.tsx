@@ -1,6 +1,6 @@
 "use client";
 
-import { use, useState } from "react";
+import { useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { ArrowRight, Loader2, Pencil, Plus, X } from "lucide-react";
 
@@ -33,17 +33,14 @@ import {
 import { ADDITIONS_STAGE_NAME } from "@/lib/stage-constants";
 import type { ItemStagesResponse, OrderItemStage } from "@/types/order";
 
-export default function ItemDetailsPage({
-  params,
-}: {
-  params: Promise<{ id: string; itemId: string }>;
-}) {
-  const resolvedParams = use(params);
-  const orderId = Number(resolvedParams.id);
-  const itemId = Number(resolvedParams.itemId);
-
+export default function ItemDetailsPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
+
+  // ✅ بدل ما ناخد id و itemId من params الديناميكية ([id]/[itemId])،
+  // بناخدهم من الـ query string (?id=...&itemId=...) عشان يشتغل مع static export
+  const orderId = Number(searchParams.get("id"));
+  const itemId = Number(searchParams.get("itemId"));
 
   // حالات محلية بسيطة خاصة بالصفحة نفسها فقط
   const [showStartForm, setShowStartForm] = useState(false);
@@ -97,7 +94,7 @@ export default function ItemDetailsPage({
   const handleStageChange = (stageName: string) => {
     setShowStartForm(false);
     router.push(
-      `/orders/${orderId}/items/${itemId}?stage=${encodeURIComponent(stageName)}`,
+      `/orders/items?id=${orderId}&itemId=${itemId}&stage=${encodeURIComponent(stageName)}`,
       { scroll: false },
     );
   };
@@ -118,7 +115,7 @@ export default function ItemDetailsPage({
       <div className="min-h-screen bg-[#FDFBF7] p-6 dir-rtl space-y-4">
         <Button
           variant="outline"
-          onClick={() => router.push(`/orders/${orderId}`)}
+          onClick={() => router.push(`/orders/details?id=${orderId}`)}
           className="rounded-xl gap-2 bg-white text-base font-bold"
         >
           <ArrowRight className="size-5" /> رجوع
@@ -143,7 +140,7 @@ export default function ItemDetailsPage({
           <Button
             variant="outline"
             size="icon"
-            onClick={() => router.push(`/orders/${orderId}`)}
+            onClick={() => router.push(`/orders/details?id=${orderId}`)}
             className="rounded-xl border-gray-200 bg-white hover:bg-gray-100 shrink-0 size-11"
           >
             <ArrowRight className="size-6 text-[#2C2420]" />
@@ -160,7 +157,7 @@ export default function ItemDetailsPage({
               <span>‹</span>
               <span
                 className="cursor-pointer hover:underline"
-                onClick={() => router.push(`/orders/${orderId}`)}
+                onClick={() => router.push(`/orders/details?id=${orderId}`)}
               >
                 أوردر #{orderId || apiData?.order_id || "—"}
               </span>

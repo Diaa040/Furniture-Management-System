@@ -32,7 +32,7 @@ export default function OrderItemsCard({ orderId, items, onAddClick, onEditClick
             const itemStatus = getStatusInfo(item.status);
             return (
               <div key={item.id} className="flex items-center justify-between p-4 rounded-2xl border border-gray-100 bg-[#FAFAFA] transition-colors">
-                <div onClick={() => router.push(`/orders/${orderId}/items/${item.id}`)} className="flex items-center gap-4 text-right cursor-pointer flex-1">
+                <div onClick={() => router.push(`/orders/items?id=${orderId}&itemId=${item.id}`)} className="flex items-center gap-4 text-right cursor-pointer flex-1">
                   <div className="size-14 rounded-xl bg-[#EFEBE4] shrink-0" />
                   <div>
                     <h4 className="font-bold text-[#2C2420] text-base">{item.name}</h4>
