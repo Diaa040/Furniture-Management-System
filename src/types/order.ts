@@ -208,3 +208,12 @@ export interface WorkersResponse {
   status: boolean;
   data: Worker[];
 }
+
+export interface UpdateOrderPayload {
+  customer_name: string;
+  customer_phone: string;
+  status: string;
+  delivery_date?: string;
+  notes?: string;
+}
+

@@ -58,3 +58,11 @@ export interface ICreateWorkerDTO {
   name: string;
   daily_wage: number;
 }
+
+export const SPECIALTIES = [
+  { value: "النجارة", label: "النجارة" },
+  { value: "الدهان", label: "الدهان" },
+  { value: "التنجيد", label: "التنجيد" },
+] as const;
+ 
+export const DEFAULT_SPECIALTY: string = SPECIALTIES[0].value;

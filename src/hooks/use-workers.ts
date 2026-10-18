@@ -4,10 +4,10 @@ import { IWorker, WorkerOrderItem, WorkerPayment } from "@/types/workers";
 import { api } from "@/lib/api";
 
 
-export function useWorkers() {
+export function useWorkers(specialty: string) {
   const query = useQuery({
-    queryKey: ["workers"],
-    queryFn: fetchWorkers,
+    queryKey: ["workers", specialty],
+    queryFn: () => fetchWorkers(specialty),
   });
 
   const workers: IWorker[] = (query.data?.data as unknown as IWorker[]) || [];
@@ -82,16 +82,18 @@ interface UpdateWorkerPayload {
   id: number;
   name: string;
   daily_wage: number;
+  specialty: string;
 }
 
 export function useUpdateWorker() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ id, name, daily_wage }: UpdateWorkerPayload) => {
+    mutationFn: async ({ id, name, daily_wage, specialty }: UpdateWorkerPayload) => {
       const { data } = await api.put(`/api/workers/${id}`, {
         name,
         daily_wage,
+        specialty,
       });
       return data;
     },

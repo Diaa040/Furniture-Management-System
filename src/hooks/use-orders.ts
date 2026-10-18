@@ -1,8 +1,8 @@
 'use client';
 
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { AddItem, getOrderStagesCost, getOrderWorkers, ordersApi, updateOrderItem , } from '@/apis/order.api';
-import { CreateOrderPayload, OrderDetails, ItemStagesResponse, TAddItem } from '@/types/order';
+import { useQuery, useMutation, useQueryClient, keepPreviousData } from '@tanstack/react-query';
+import { AddItem, getOrderStagesCost, getOrderWorkers, ordersApi, updateOrder, updateOrderItem, searchOrders } from '@/apis/order.api';
+import { CreateOrderPayload, OrderDetails, ItemStagesResponse, TAddItem, UpdateOrderPayload } from '@/types/order';
 import axios from 'axios';
 import { TUpdateItemPayload } from "@/types/order";
 
@@ -116,10 +116,26 @@ export async function getItemStages(
   return response;
 }
 
-export function useOrders(page = 1) {
+// enabled: بنوقف جلب القائمة العادية وقت البحث عشان منبعتش ريكويست مالوش لازمة
+export function useOrders(page = 1, enabled = true) {
   return useQuery({
     queryKey: ['orders', page],
     queryFn: () => ordersApi.getOrders(page),
+    enabled,
+  });
+}
+
+// 🔍 بحث الأوردرات من الباك إند (/api/search/orders)
+// الـ key بيبدأ بـ 'orders' عشان أي invalidateQueries({ queryKey: ['orders'] }) يحدّث نتايج البحث كمان
+export function useSearchOrders(query: string) {
+  const trimmed = query.trim();
+
+  return useQuery({
+    queryKey: ['orders', 'search', trimmed],
+    queryFn: () => searchOrders(trimmed),
+    enabled: trimmed !== '',
+    // نسيب النتايج القديمة ظاهرة لحد ما الجديدة توصل (من غير وميض)
+    placeholderData: keepPreviousData,
   });
 }
 
@@ -212,11 +228,25 @@ export function useOrderStagesCost(orderId: number | string) {
 
 
 
-export function useOrderWorkers( enabled : boolean = true) {
+export function useOrderWorkers(enabled: boolean = true, stageName?: string) {
   return useQuery({
-    queryKey: ["workers"],
-    queryFn: getOrderWorkers,
+    queryKey: ["workers", stageName],
+    queryFn: () => getOrderWorkers(stageName),
     select: (res) => res.data,
     enabled,
+  });
+}
+
+export function useUpdateOrder() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ id, payload }: { id: number; payload: UpdateOrderPayload }) =>
+      updateOrder(id, payload),
+    onSuccess: (_, { id }) => {
+      // استخدم نفس الـ queryKey اللي في useOrders / useOrderDetails عندك
+      queryClient.invalidateQueries({ queryKey: ["orders"] });
+      queryClient.invalidateQueries({ queryKey: ["order", id] });
+    },
   });
 }

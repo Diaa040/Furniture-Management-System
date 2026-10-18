@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
 import { Armchair } from "lucide-react";
+import { canAccessPath } from "@/lib/permissions";
 
 import {
   Sidebar,
@@ -60,6 +61,14 @@ export function AppSidebar() {
   const pathname = usePathname();
   const { user } = useAuth();
 
+  // نخفي اللينكات الممنوعة على دور المستخدم الحالي، ونخفي المجموعة كلها لو فضيت
+  const visibleGroups = navigationGroups
+    .map((group) => ({
+      ...group,
+      items: group.items.filter((item) => canAccessPath(user?.role, item.url)),
+    }))
+    .filter((group) => group.items.length > 0);
+
   const getInitials = (name?: string) => {
     if (!name) return "مص";
     const parts = name.trim().split(" ");
@@ -96,7 +105,7 @@ export function AppSidebar() {
 
       {/* 2️⃣ قائمة التنقل (Content) */}
       <SidebarContent className="px-3 py-2 space-y-1">
-        {navigationGroups.map((group) => (
+        {visibleGroups.map((group) => (
           <SidebarGroup key={group.title} className="p-0 py-1">
             <SidebarGroupLabel className="px-3 text-[13px] font-normal text-muted-foreground/60 h-auto mb-1">
               {group.title}

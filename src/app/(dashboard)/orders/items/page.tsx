@@ -227,7 +227,7 @@ export default function ItemDetailsPage() {
                 onClick={() => setShowStartForm(true)}
                 className="bg-[#7C4A26] hover:bg-[#633a1e] text-white font-black rounded-xl px-6 py-5 shadow-sm gap-2 mt-2"
               >
-                <Plus className="size-5" /> إضافة جديدة
+                <Plus className="size-5" /> بدء المرحلة
               </Button>
             </div>
           </Card>

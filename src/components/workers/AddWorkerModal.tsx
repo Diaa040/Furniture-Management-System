@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -8,18 +8,31 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Loader2 } from "lucide-react";
 import { createWorker } from "@/apis/workers.api";
+import { SPECIALTIES, DEFAULT_SPECIALTY } from "@/types/workers";
 
 interface AddWorkerModalProps {
   isOpen: boolean;
   onClose: () => void;
+  // التخصص اللي يبدأ بيه الاختيار (بنمرر التاب النشط من الصفحة)
+  defaultSpecialty?: string;
 }
 
-export default function AddWorkerModal({ isOpen, onClose }: AddWorkerModalProps) {
+export default function AddWorkerModal({
+  isOpen,
+  onClose,
+  defaultSpecialty = DEFAULT_SPECIALTY,
+}: AddWorkerModalProps) {
   const queryClient = useQueryClient();
 
   const [name, setName] = useState("");
   const [dailyWage, setDailyWage] = useState("");
+  const [specialty, setSpecialty] = useState<string>(defaultSpecialty);
   const [formError, setFormError] = useState<string | null>(null);
+
+  // كل ما يتفتح المودال نبدأ بالتخصص الافتراضي
+  useEffect(() => {
+    if (isOpen) setSpecialty(defaultSpecialty);
+  }, [isOpen, defaultSpecialty]);
 
   const mutation = useMutation({
     mutationFn: createWorker,
@@ -32,6 +45,7 @@ export default function AddWorkerModal({ isOpen, onClose }: AddWorkerModalProps)
   const resetAndClose = () => {
     setName("");
     setDailyWage("");
+    setSpecialty(defaultSpecialty);
     setFormError(null);
     onClose();
   };
@@ -51,7 +65,7 @@ export default function AddWorkerModal({ isOpen, onClose }: AddWorkerModalProps)
       return;
     }
 
-    mutation.mutate({ name: name.trim(), daily_wage: numericWage });
+    mutation.mutate({ name: name.trim(), daily_wage: numericWage, specialty });
   };
 
   return (
@@ -72,6 +86,21 @@ export default function AddWorkerModal({ isOpen, onClose }: AddWorkerModalProps)
               placeholder="مثال: محمد محمود"
               className="rounded-xl border-gray-200 h-11 text-right text-sm font-bold"
             />
+          </div>
+
+          <div className="space-y-1.5 text-right">
+            <Label className="text-sm font-bold text-[#2C2420]">التخصص *</Label>
+            <select
+              value={specialty}
+              onChange={(e) => setSpecialty(e.target.value)}
+              className="w-full rounded-xl border border-gray-200 h-11 px-3 text-right text-sm font-bold bg-white text-[#2C2420] focus:outline-none focus:ring-2 focus:ring-[#7C4A26]/40"
+            >
+              {SPECIALTIES.map((item) => (
+                <option key={item.value} value={item.value}>
+                  {item.label}
+                </option>
+              ))}
+            </select>
           </div>
 
           <div className="space-y-1.5 text-right">

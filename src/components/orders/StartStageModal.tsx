@@ -45,6 +45,7 @@ export function StartStageForm({
 
   const { data: workers = [], isLoading: isLoadingWorkers } = useOrderWorkers(
     paymentType === "daily",
+    stageName,
   );
 
   const startStage = useStartStage(orderId, itemId);
@@ -162,7 +163,7 @@ export function StartStageForm({
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               <div className="space-y-1.5 text-right">
                 <Label className="text-xs font-black text-foreground">
-                  اسم الورشة / الصنيعي
+                  اسم الصنيعي
                 </Label>
                 <Input
                   value={handlerName}

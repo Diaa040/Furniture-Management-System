@@ -135,9 +135,16 @@ export default function TreasuryPage() {
 
   const treasury = response.data;
   const withdrawalsList = withdrawalsResponse?.data?.data || [];
-  // ✅ receivables و stages بيرجعوا بشكل flat (current_page/last_page/data في نفس المستوى)
+  // ✅ receivables بيرجع بشكل flat (current_page/last_page/data في نفس المستوى)
   const receivablesList = receivablesResponse?.data || [];
-  const stagesList = stagesResponse?.data || [];
+
+  // ✅ stages بيرجع object مفاتيحه أرقام ("0", "1", ...) جنب total_remaining
+  // فنجيب المفاتيح الرقمية بس ونحوّلها لـ array
+  const stagesList: StageFinancialItem[] = stagesResponse
+    ? Object.entries(stagesResponse)
+        .filter(([key]) => /^\d+$/.test(key))
+        .map(([, value]) => value as StageFinancialItem)
+    : [];
 
   // بيانات الباجينيشن (current_page / last_page) لكل جدول
   const withdrawalsMeta = withdrawalsResponse?.data;

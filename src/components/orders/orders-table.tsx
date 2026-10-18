@@ -1,24 +1,64 @@
 'use client';
 
-import { useState } from 'react';
-import { useOrders } from '@/hooks/use-orders';
+import { useEffect, useState } from 'react';
+import { Pencil } from 'lucide-react';
+import { useOrders, useSearchOrders } from '@/hooks/use-orders';
 import { OrderListItem } from '@/types/order';
 
 interface OrdersTableProps {
+  search?: string;
   onSelectOrder?: (orderId: number) => void;
+  onEditOrder?: (order: OrderListItem) => void;
 }
 
-export function OrdersTable({ onSelectOrder }: OrdersTableProps) {
+// تأخير بسيط قبل إرسال البحث للباك إند عشان منبعتش ريكويست مع كل حرف
+function useDebouncedValue<T>(value: T, delay = 400) {
+  const [debounced, setDebounced] = useState(value);
+
+  useEffect(() => {
+    const timer = setTimeout(() => setDebounced(value), delay);
+    return () => clearTimeout(timer);
+  }, [value, delay]);
+
+  return debounced;
+}
+
+export function OrdersTable({
+  search = '',
+  onSelectOrder,
+  onEditOrder,
+}: OrdersTableProps) {
   const [page, setPage] = useState(1);
 
-  // 1️⃣ استخدام الـ Hook لجلب البيانات بناءً على رقم الصفحة
-  const { data, isLoading, isError, error } = useOrders(page);
+  // لو خانة البحث فضيت نرجع للقائمة فوراً من غير ما نستنى الـ debounce
+  const debounced = useDebouncedValue(search);
+  const searchTerm = search.trim() === '' ? '' : debounced.trim();
+  const isSearching = searchTerm !== '';
+
+  // 1️⃣ القائمة العادية (بتتوقف وقت البحث) + نتايج البحث من الباك إند
+  const listQuery = useOrders(page, !isSearching);
+  const searchQuery = useSearchOrders(searchTerm);
+
+  const activeQuery = isSearching ? searchQuery : listQuery;
+  const { isLoading, isError, error } = activeQuery;
+
+  // /api/search/orders بيرجّع { status, data: [...] } مباشرة من غير باجينيشن
+  const ordersList: OrderListItem[] = isSearching
+    ? ((searchQuery.data?.data as OrderListItem[] | undefined) ?? [])
+    : (listQuery.data?.data?.data ?? []);
+
+  const currentPage = listQuery.data?.data?.current_page || page;
+
+  // لما البحث يتغير نرجع للصفحة الأولى
+  useEffect(() => {
+    setPage(1);
+  }, [search]);
 
   // حالة التحميل أثناء طلب البيانات من API
   if (isLoading) {
     return (
       <div className="flex justify-center items-center p-12 text-gray-500">
-        جاري تحميل قائمة الطلبات...
+        {isSearching ? 'جاري البحث...' : 'جاري تحميل قائمة الطلبات...'}
       </div>
     );
   }
@@ -27,17 +67,19 @@ export function OrdersTable({ onSelectOrder }: OrdersTableProps) {
   if (isError) {
     return (
       <div className="p-4 bg-red-50 text-red-600 rounded-md border border-red-200">
-        حدث خطأ أثناء تحميل الطلبات: {(error as Error)?.message || 'تأكد من اتصال السيرفر'}
+        حدث خطأ أثناء {isSearching ? 'البحث' : 'تحميل الطلبات'}:{' '}
+        {(error as Error)?.message || 'تأكد من اتصال السيرفر'}
       </div>
     );
   }
 
-  const ordersList: OrderListItem[] = data?.data?.data || [];
-  const currentPage = data?.data?.current_page || 1;
-
   return (
     <div className="space-y-4">
-      <div className="overflow-x-auto rounded-lg border border-gray-200 shadow-sm bg-white">
+      <div
+        className={`overflow-x-auto rounded-lg border border-gray-200 shadow-sm bg-white transition-opacity ${
+          isSearching && searchQuery.isFetching ? 'opacity-60' : ''
+        }`}
+      >
         <table className="w-full text-right text-sm">
           <thead className="bg-gray-50 border-b border-gray-200 text-gray-700 font-semibold">
             <tr>
@@ -48,13 +90,14 @@ export function OrdersTable({ onSelectOrder }: OrdersTableProps) {
               <th className="p-3">العربون المدفوع</th>
               <th className="p-3">المبلغ المتبقي</th>
               <th className="p-3">الحالة</th>
+              <th className="p-3">إجراءات</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-100">
             {ordersList.length === 0 ? (
               <tr>
-                <td colSpan={7} className="text-center p-6 text-gray-400">
-                  لا يوجد طلبات حالياً
+                <td colSpan={8} className="text-center p-6 text-gray-400">
+                  {isSearching ? 'لا توجد نتائج مطابقة للبحث' : 'لا يوجد طلبات حالياً'}
                 </td>
               </tr>
             ) : (
@@ -75,6 +118,19 @@ export function OrdersTable({ onSelectOrder }: OrdersTableProps) {
                       {order.status}
                     </span>
                   </td>
+                  <td className="p-3">
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation(); // عشان الصف نفسه بيفتح التفاصيل
+                        onEditOrder?.(order);
+                      }}
+                      className="inline-flex size-8 items-center justify-center rounded-lg border border-gray-300 hover:bg-gray-50"
+                      title="تعديل"
+                    >
+                      <Pencil className="size-4 text-[#7C4A26]" />
+                    </button>
+                  </td>
                 </tr>
               ))
             )}
@@ -82,26 +138,28 @@ export function OrdersTable({ onSelectOrder }: OrdersTableProps) {
         </table>
       </div>
 
-      {/* 2️⃣ أزرار التنقل بين الصفحات (Pagination) */}
-      <div className="flex justify-between items-center px-2 py-1">
-        <span className="text-sm text-gray-500">الصفحة {currentPage}</span>
-        <div className="flex gap-2">
-          <button
-            onClick={() => setPage((prev) => Math.max(prev - 1, 1))}
-            disabled={currentPage === 1}
-            className="px-3 py-1 text-sm rounded border border-gray-300 disabled:opacity-40 disabled:cursor-not-allowed hover:bg-gray-50"
-          >
-            السابق
-          </button>
-          <button
-            onClick={() => setPage((prev) => prev + 1)}
-            disabled={ordersList.length === 0}
-            className="px-3 py-1 text-sm rounded border border-gray-300 disabled:opacity-40 disabled:cursor-not-allowed hover:bg-gray-50"
-          >
-            التالي
-          </button>
+      {/* 2️⃣ أزرار التنقل بين الصفحات - مخفية وقت البحث لأن نتايج البحث مفيهاش باجينيشن */}
+      {!isSearching && (
+        <div className="flex justify-between items-center px-2 py-1">
+          <span className="text-sm text-gray-500">الصفحة {currentPage}</span>
+          <div className="flex gap-2">
+            <button
+              onClick={() => setPage((prev) => Math.max(prev - 1, 1))}
+              disabled={currentPage === 1}
+              className="px-3 py-1 text-sm rounded border border-gray-300 disabled:opacity-40 disabled:cursor-not-allowed hover:bg-gray-50"
+            >
+              السابق
+            </button>
+            <button
+              onClick={() => setPage((prev) => prev + 1)}
+              disabled={ordersList.length === 0}
+              className="px-3 py-1 text-sm rounded border border-gray-300 disabled:opacity-40 disabled:cursor-not-allowed hover:bg-gray-50"
+            >
+              التالي
+            </button>
+          </div>
         </div>
-      </div>
+      )}
     </div>
   );
 }

@@ -1,5 +1,6 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { useWorkerOrderItems } from "@/hooks/use-workers";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Loader2, Package, Plus, CreditCard } from "lucide-react";
@@ -11,6 +12,8 @@ interface WorkerDetailsModalProps {
   worker: { id: number; name: string } | null;
   onOpenAddPayment: () => void;
   onOpenHistory: () => void;
+  // التخصص النشط في صفحة العمال (النجارة / الدهان / التنجيد) = اسم المرحلة
+  specialty?: string;
 }
 
 const statusMap: Record<string, { label: string; className: string }> = {
@@ -20,14 +23,26 @@ const statusMap: Record<string, { label: string; className: string }> = {
   delivered: { label: "تم التسليم", className: "bg-[#E6F4EA] text-[#1E7E34]" },
 };
 
+// نفس الرابط اللي بيستخدمه OrderItemsCard + اسم المرحلة (حسب تخصص الصنايعي)
+const buildItemHref = (orderId: number, itemId: number, stageName?: string) =>
+  `/orders/items?id=${orderId}&itemId=${itemId}` +
+  (stageName ? `&stage=${encodeURIComponent(stageName)}` : "");
+
 export default function WorkerDetailsModal({
   isOpen,
   onClose,
   worker,
   onOpenAddPayment,
   onOpenHistory,
+  specialty,
 }: WorkerDetailsModalProps) {
+  const router = useRouter();
   const { items, isLoading, isError } = useWorkerOrderItems(worker?.id ?? null);
+
+  const handleOpenItem = (orderId: number, itemId: number) => {
+    onClose();
+    router.push(buildItemHref(orderId, itemId, specialty));
+  };
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -79,7 +94,16 @@ export default function WorkerDetailsModal({
               return (
                 <div
                   key={item.id}
-                  className="flex items-center justify-between p-4 rounded-xl border border-gray-100 bg-[#FAFAFA]"
+                  role="button"
+                  tabIndex={0}
+                  onClick={() => handleOpenItem(item.order_id, item.id)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" || e.key === " ") {
+                      e.preventDefault();
+                      handleOpenItem(item.order_id, item.id);
+                    }
+                  }}
+                  className="flex items-center justify-between p-4 rounded-xl border border-gray-100 bg-[#FAFAFA] cursor-pointer transition hover:bg-[#F3E7DA]/40 hover:border-[#7C4A26]/30"
                 >
                   <div className="space-y-1">
                     <div className="flex items-center gap-2">

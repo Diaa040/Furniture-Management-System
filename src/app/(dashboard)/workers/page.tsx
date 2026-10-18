@@ -11,9 +11,13 @@ import WorkerPaymentsModal from "@/components/workers/WorkerPaymentsModal"; // �
 import AddWorkerModal from "@/components/workers/AddWorkerModal";
 import EditWorkerModal from "@/components/workers/EditWorkerModal";
 import type { IWorker } from "@/types/workers";
+import { SPECIALTIES, DEFAULT_SPECIALTY } from "@/types/workers";
 
 export default function WorkersPage() {
-  const { workers, isLoading, isError } = useWorkers();
+  // التخصص النشط - النجارة هي الافتراضية
+  const [specialty, setSpecialty] = useState<string>(DEFAULT_SPECIALTY);
+
+  const { workers, isLoading, isError } = useWorkers(specialty);
 
   const [selectedWorker, setSelectedWorker] = useState<{
     id: number;
@@ -28,27 +32,6 @@ export default function WorkersPage() {
   // الصنايعي اللي بيتعدل دلوقتي + حالة فتح مودال التعديل
   const [editingWorker, setEditingWorker] = useState<IWorker | null>(null);
   const [isEditWorkerOpen, setIsEditWorkerOpen] = useState(false);
-
-  if (isLoading) {
-    return (
-      <div className="flex h-96 items-center justify-center dir-rtl">
-        <Loader2 className="size-8 animate-spin text-[#7C4A26]" />
-        <span className="mr-3 text-sm text-muted-foreground">
-          جاري تحميل بيانات العمال...
-        </span>
-      </div>
-    );
-  }
-
-  if (isError) {
-    return (
-      <div className="p-6 dir-rtl">
-        <div className="p-4 bg-red-50 text-red-600 rounded-xl border border-red-200 text-sm">
-          حدث خطأ أثناء جلب بيانات العمال.
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="p-6 space-y-6 bg-[#FDFBF7] min-h-screen" dir="rtl">
@@ -70,7 +53,40 @@ export default function WorkersPage() {
         </Button>
       </div>
 
-      {workers.length > 0 ? (
+      {/* أزرار التخصصات */}
+      <div className="flex flex-wrap items-center gap-2">
+        {SPECIALTIES.map((item) => {
+          const isActive = specialty === item.value;
+          return (
+            <button
+              key={item.value}
+              type="button"
+              onClick={() => setSpecialty(item.value)}
+              className={`px-5 py-2 rounded-xl text-sm font-bold border transition cursor-pointer ${
+                isActive
+                  ? "bg-[#7C4A26] text-white border-[#7C4A26] shadow-sm"
+                  : "bg-white text-[#7C4A26] border-[#7C4A26]/30 hover:bg-[#FAF8F5]"
+              }`}
+            >
+              {item.label}
+            </button>
+          );
+        })}
+      </div>
+
+      {/* حالات التحميل والخطأ جوه منطقة الكروت عشان الأزرار تفضل ظاهرة */}
+      {isLoading ? (
+        <div className="flex h-64 items-center justify-center">
+          <Loader2 className="size-8 animate-spin text-[#7C4A26]" />
+          <span className="mr-3 text-sm text-muted-foreground">
+            جاري تحميل بيانات العمال...
+          </span>
+        </div>
+      ) : isError ? (
+        <div className="p-4 bg-red-50 text-red-600 rounded-xl border border-red-200 text-sm">
+          حدث خطأ أثناء جلب بيانات العمال.
+        </div>
+      ) : workers.length > 0 ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {workers.map((worker) => {
             const initials = worker.name ? worker.name.slice(0, 2) : "ع";
@@ -152,7 +168,7 @@ export default function WorkersPage() {
       ) : (
         <div className="text-center py-16 bg-white rounded-2xl border border-sidebar-border/40">
           <p className="text-sm text-muted-foreground">
-            لا توجد سجلات لعاملين حالياً
+            لا توجد سجلات لعاملين في هذا التخصص حالياً
           </p>
         </div>
       )}
@@ -162,13 +178,14 @@ export default function WorkersPage() {
         isOpen={isDetailsOpen}
         onClose={() => setIsDetailsOpen(false)}
         worker={selectedWorker}
+        specialty={specialty}
         onOpenAddPayment={() => {
           setIsDetailsOpen(false);
           setIsAddPaymentOpen(true);
         }}
         onOpenHistory={() => {
           setIsDetailsOpen(false);
-          setIsPaymentsModalOpen(true); // فتح مودال الدفعات عند الضغط على زر "الدفعات"
+          setIsPaymentsModalOpen(true);
         }}
       />
 
@@ -190,6 +207,7 @@ export default function WorkersPage() {
       <AddWorkerModal
         isOpen={isAddWorkerOpen}
         onClose={() => setIsAddWorkerOpen(false)}
+        defaultSpecialty={specialty}
       />
 
       {/* مودال تعديل بيانات صنايعي */}
@@ -197,6 +215,7 @@ export default function WorkersPage() {
         isOpen={isEditWorkerOpen}
         onClose={() => setIsEditWorkerOpen(false)}
         worker={editingWorker}
+        activeSpecialty={specialty}
       />
     </div>
   );

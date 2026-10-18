@@ -13,7 +13,13 @@ import type {
 } from "@/types/order";
 
 import { WorkersResponse } from "@/types/workers";
+import type { UpdateOrderPayload } from "@/types/order";
 
+export async function updateOrder(id: number, payload: UpdateOrderPayload) {
+  // غيّر put لـ patch أو post حسب ما الـ backend متعرّف
+  const response = await api.patch(`/api/order/update/${id}`, payload);
+  return response.data;
+}
 export async function getItemStages(
   orderId: number,
   itemId: number,
@@ -189,8 +195,17 @@ export const stageApi = {
   },
 };
 
-// ⚠️ تم تعديلها لتستخدم "api" بدلاً من "fetch" العادي، عشان يترفق التوكين تلقائياً
-export async function getOrderWorkers(): Promise<WorkersResponse> {
-  const response = await api.get<WorkersResponse>("/get-worker");
+export async function getOrderWorkers(
+  specialty?: string,
+): Promise<WorkersResponse> {
+  const response = await api.get<WorkersResponse>("/api/get-worker", {
+    params: specialty ? { specialty } : undefined,
+  });
+  return response.data;
+}
+export async function searchOrders(query: string) {
+  const response = await api.get("/api/search/orders", {
+    params: { search: query },
+  });
   return response.data;
 }

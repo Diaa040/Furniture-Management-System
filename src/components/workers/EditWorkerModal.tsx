@@ -7,20 +7,30 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Loader2 } from "lucide-react";
 import { useUpdateWorker } from "@/hooks/use-workers";
+import { DEFAULT_SPECIALTY } from "@/types/workers";
 
 interface EditWorkerModalWorker {
   id: number;
   name: string;
   daily_wage: number | string;
+  // لو الباك إند بيرجّع التخصص مع الصنايعي هنستخدمه
+  specialty?: string;
 }
 
 interface EditWorkerModalProps {
   isOpen: boolean;
   onClose: () => void;
   worker: EditWorkerModalWorker | null;
+  // التخصص النشط في الصفحة، بنستخدمه لو الصنايعي نفسه مفيهوش specialty
+  activeSpecialty?: string;
 }
 
-export default function EditWorkerModal({ isOpen, onClose, worker }: EditWorkerModalProps) {
+export default function EditWorkerModal({
+  isOpen,
+  onClose,
+  worker,
+  activeSpecialty = DEFAULT_SPECIALTY,
+}: EditWorkerModalProps) {
   const [name, setName] = useState("");
   const [dailyWage, setDailyWage] = useState("");
   const [formError, setFormError] = useState<string | null>(null);
@@ -59,7 +69,12 @@ export default function EditWorkerModal({ isOpen, onClose, worker }: EditWorkerM
     }
 
     mutation.mutate(
-      { id: worker.id, name: name.trim(), daily_wage: numericWage },
+      {
+        id: worker.id,
+        name: name.trim(),
+        daily_wage: numericWage,
+        specialty: worker.specialty ?? activeSpecialty,
+      },
       {
         onSuccess: () => {
           resetAndClose();

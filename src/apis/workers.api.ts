@@ -2,8 +2,10 @@ import { api } from "@/lib/api";
 import { ICreateWorkerDTO, WorkerOrderItemsResponse, WorkersResponse } from "@/types/workers";
 
 
-export async function fetchWorkers(): Promise<WorkersResponse> {
-  const response = await api.get("/api/get-worker"); // استبدل بمسار الـ endpoint الفعلي لو كان مختلفاً
+export async function fetchWorkers(specialty: string): Promise<WorkersResponse> {
+  const response = await api.get("/api/get-worker", {
+    params: { specialty },
+  }); // استبدل بمسار الـ endpoint الفعلي لو كان مختلفاً
   return response.data;
 }
 
@@ -32,7 +34,11 @@ export async function fetchOrderItemStages(orderId: number, itemId: number) {
   return response.data;
 }
 
-export async function createWorker(data: ICreateWorkerDTO) {
-  const response = await api.post("/api/workers", data);
-  return response.data;
-}
+export const createWorker = async (payload: {
+  name: string;
+  daily_wage: number;
+  specialty: string;
+}) => {
+  const { data } = await api.post("/api/workers", payload);
+  return data;
+};
